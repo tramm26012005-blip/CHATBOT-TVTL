@@ -1,0 +1,48 @@
+.payment-management {--payment-green:#175446;--payment-line:#efddcf;padding:2px 4px 22px;}
+.payment-banner,
+.payment-banner :is(h2,p,strong,span) {
+  font-family:"Playfair Display",Georgia,serif;
+}
+.payment-page-title {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+.payment-banner {padding:19px 24px;border:1px solid var(--payment-line);border-radius:17px;background:linear-gradient(110deg,var(--a-surface),#fff3e8);box-shadow:0 3px 9px #9d694509;}
+.payment-banner h2 {margin:4px 0 6px;color:var(--payment-green);font-size:34px;font-weight:700;line-height:42px;}
+.payment-banner p {margin:0 0 11px;font-size:15px;line-height:22px;color:var(--a-text);}
+.payment-banner>strong {display:inline-block;padding:6px 12px;border-radius:18px;background:#ffeadb;color:#aa491b;font-size:15px;font-weight:600;line-height:18px;}
+.payment-management>.payment-description {margin:13px 1px;font-size:15px;line-height:1.7;color:var(--a-muted);}
+.payment-management .ref-filter-row {display:flex;gap:16px;margin:14px 0 17px;flex-wrap:wrap;}
+.payment-management .ref-filter-row input,.payment-management .ref-filter-row select {height:43px;border-color:var(--payment-line);border-radius:12px;padding:9px 16px;background:var(--a-surface);font-size:15px;}
+.payment-management .ref-filter-row select {min-width:225px;}
+.payment-management .payment-export {min-width:130px;height:43px;padding:8px 20px;border:1px solid #54a564;border-radius:12px;color:#286c32;background:var(--a-surface);font-size:15px;font-weight:600;}
+.payment-management .payment-export:hover {background:#edf5e8;}
+.payment-management .payment-table-card {margin:0;padding:0 14px 14px;border:1px solid var(--payment-line);border-radius:17px;overflow:hidden;background:var(--a-surface);}
+.admin-reference .payment-management table {width:100%;min-width:790px;border-collapse:separate;border-spacing:0;font-size:15px;}
+.payment-management table th {background:linear-gradient(110deg,#fff1e5,#fceee3);border:0;color:var(--payment-green);font-size:15px;font-weight:700;padding:13px 15px;white-space:nowrap;}
+.payment-management table th:first-child {border-radius:10px 0 0 0;}
+.payment-management table th:last-child {border-radius:0 10px 0 0;}
+.payment-management table td {padding:9px 15px;border:0;border-bottom:1px solid #f0e1d7;vertical-align:middle;white-space:nowrap;}
+.payment-management .payment-user-name {display:block;font-weight:500;font-size:15px;}
+.payment-management table td small {display:block;margin-top:3px;font-size:12px;line-height:1.4;color:var(--a-muted);}
+.payment-status {display:inline-block;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:600;line-height:1.4;}
+.payment-status.success {background:#e6f4d6;color:#33752b;}
+.payment-status.held {background:#fff0d2;color:#8b641b;}
+.payment-status.refund_requested {background:#ffe5d5;color:#a74e22;}
+.payment-status.refunded {background:#e6eeed;color:#4c7269;}
+.payment-refund {display:inline-block;min-width:122px;padding:5px 14px;border:1px solid #6aaf74;border-radius:20px;background:transparent;color:#388044;font:500 14px/1.4 "Be Vietnam Pro",Arial,sans-serif;cursor:pointer;}
+.payment-refund:hover {background:#eef6e9;}
+.payment-management button:focus-visible,.payment-management summary:focus-visible {outline:2px solid #6f9e89;outline-offset:3px;}
+.payment-operations {margin-top:18px;border:1px solid var(--payment-line);border-radius:14px;background:var(--a-surface);padding:14px 18px;}
+.payment-operations>summary {color:var(--payment-green);font-size:13px;font-weight:600;cursor:pointer;}
+.payment-operations>.consultation-panel {border:0;margin:12px 0 0;padding:0;box-shadow:none;}
+html[data-theme="dark"] .payment-management {--payment-green:#b7ddc7;--payment-line:var(--a-line);}
+html[data-theme="dark"] .payment-banner,html[data-theme="dark"] .payment-management table th {background:var(--a-surface);}
+html[data-theme="dark"] .payment-banner>strong {background:#4c392b;color:#ffd3aa;}
+html[data-theme="dark"] .payment-management table td {border-color:var(--a-line);}
+html[data-theme="dark"] .payment-status.success {background:#2f4b32;color:#c1e6ac;}
+html[data-theme="dark"] .payment-status.held {background:#4b432a;color:#f1d79f;}
+html[data-theme="dark"] .payment-status.refund_requested {background:#50372b;color:#ffc9aa;}
+html[data-theme="dark"] .payment-status.refunded {background:#344943;color:#c0dbd1;}
+html[data-theme="dark"] .payment-refund,html[data-theme="dark"] .payment-management .payment-export {color:#bddfae;}
+html[data-theme="dark"] .payment-refund:hover,html[data-theme="dark"] .payment-management .payment-export:hover {background:#324837;}
+@media(max-width:650px) {.payment-banner{padding:16px;}.payment-banner h2{font-size:28px;line-height:36px;}.payment-management .ref-filter-row{gap:9px;}.payment-management .ref-filter-row input{flex-basis:100%;}.payment-management .ref-filter-row select{flex:1;min-width:0;}.payment-management .payment-export{min-width:110px;}.payment-management .payment-table-card{padding-inline:8px;}}
+
+html .admin-shell.admin-reference .admin-content .payment-management .payment-status {font-size:12px;line-height:1.3;padding:4px 9px;white-space:nowrap;}

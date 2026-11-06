@@ -1,0 +1,70 @@
+.ref-charts-grid>.ref-saved-card {grid-column:1/-1;position:relative;isolation:isolate;overflow:hidden;padding:23px 28px;border-radius:25px;background:linear-gradient(120deg,var(--a-surface),#fff7ef);}
+.ref-charts-grid>.ref-saved-card>h2 {position:relative;display:table;width:fit-content;margin:0;padding:6px 17px;border-radius:30px;background:#fff0df;color:#0d513b;font-size:24px;line-height:1.4;}
+.ref-saved-card>h2::after {content:"";position:absolute;left:13px;right:13px;bottom:-7px;height:7px;border-top:3px solid #ff956e;border-radius:50%;transform:rotate(-1deg);}
+.saved-conversations-body {display:flex;align-items:center;justify-content:center;gap:35px;max-width:900px;margin:25px auto 21px;}
+.saved-conversations-ring {position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:230px;height:230px;flex:none;gap:8px;}
+.saved-conversations-ring>svg {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.saved-conversations-ring circle {fill:none;stroke-width:20;}
+.saved-circle-track {stroke:#e7eee2;}
+.saved-circle-fill {stroke:url(#savedConversationGradient);transform:rotate(-90deg);transform-origin:70px 70px;}
+.saved-ring-seam {stroke:var(--a-surface);stroke-width:1.5;}
+#main-content .ref-saved-card .saved-conversations-count {position:relative;color:#0c5038;font-size:48px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;}
+#main-content .ref-saved-card .saved-conversations-ring>small {position:relative;padding:6px 14px;border-radius:35px;background:#e8efd8;color:#284c38;font-size:13px;line-height:1.35;text-align:center;}
+.saved-conversations-copy {border-left:1px solid #cfd9bd;padding:8px 0 8px 30px;max-width:420px;}
+#main-content .ref-saved-card .saved-conversations-copy p {margin:0 0 12px;font-size:16px;line-height:1.8;color:var(--a-text);}
+#main-content .ref-saved-card .saved-conversations-copy button {display:inline-flex;align-items:center;justify-content:center;gap:14px;padding:9px 19px;border:0;border-radius:30px;background:linear-gradient(110deg,#e0efcc,#cde3b9);color:#14533c;font-family:inherit;font-size:15px;font-weight:700;line-height:1.5;cursor:pointer;}
+.saved-conversations-copy button:hover {filter:brightness(.97);}.saved-conversations-copy button:focus-visible{outline:2px solid #548c6b;outline-offset:3px;}
+.saved-conversations-wave {position:absolute;bottom:0;right:0;width:60%;height:110px;z-index:-1;pointer-events:none;}
+.saved-conversations-wave path:first-child {fill:#e8edce;opacity:.45;}.saved-conversations-wave path:last-child{fill:#dce8c0;opacity:.5;}
+html[data-theme="dark"] .ref-charts-grid>.ref-saved-card {background:var(--a-surface);}
+html[data-theme="dark"] .ref-saved-card>h2{background:#443b2f;color:#c6e2cd;}
+html[data-theme="dark"] #main-content .ref-saved-card .saved-conversations-count{color:#c0e0c9;}
+html[data-theme="dark"] #main-content .ref-saved-card .saved-conversations-ring>small{background:#354b37;color:#d4e7cb;}
+html[data-theme="dark"] .saved-circle-track{stroke:#34473a;}
+html[data-theme="dark"] .saved-conversations-wave{opacity:.15;}
+@media(max-width:700px){.ref-charts-grid>.ref-saved-card{padding:20px 16px;}.ref-saved-card>h2{font-size:21px;}.saved-conversations-body{gap:20px;}.saved-conversations-ring{width:185px;height:185px;}.saved-conversations-copy{padding-left:18px;}#main-content .ref-saved-card .saved-conversations-copy p{font-size:15px;}}
+@media(max-width:480px){.saved-conversations-body{flex-direction:column;margin-top:28px;gap:16px;}.saved-conversations-copy{border:0;padding:0;text-align:center;}.saved-conversations-ring{width:205px;height:205px;}}
+
+/* Keep the three dashboard charts together on desktop. */
+@media(min-width:1101px) {
+  .admin-reference .ref-charts-grid {grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;}
+  .admin-reference .ref-charts-grid>.ref-saved-card {grid-column:auto;padding:16px;}
+  .ref-charts-grid>.ref-saved-card>h2 {font-size:18px;padding:5px 10px;}
+  .saved-conversations-body {gap:13px;margin:20px 0 8px;}
+  .saved-conversations-ring {width:145px;height:145px;gap:5px;}
+  #main-content .ref-saved-card .saved-conversations-count {font-size:34px;}
+  #main-content .ref-saved-card .saved-conversations-ring>small {font-size:10px;padding:4px 8px;}
+  .saved-conversations-copy {padding:4px 0 4px 12px;min-width:0;}
+  #main-content .ref-saved-card .saved-conversations-copy p {font-size:12px;line-height:1.6;margin-bottom:9px;}
+  #main-content .ref-saved-card .saved-conversations-copy button {font-size:11px;gap:6px;padding:6px 10px;text-align:left;}
+  .saved-conversations-copy button svg {width:15px;flex:none;}
+  .saved-conversations-wave {height:65px;}
+}
+@media(min-width:1101px) and (max-width:1450px) {
+  .saved-conversations-body {flex-direction:column;gap:10px;margin-top:17px;}
+  .saved-conversations-ring {width:125px;height:125px;}
+  .saved-conversations-copy {border-left:0;padding:0;text-align:center;}
+}
+
+.admin-reference .ref-charts-grid>.ref-saved-card>h2 {
+  margin:0;
+  padding:0;
+  border-radius:0;
+  background:transparent;
+  font-family:"Be Vietnam Pro",Arial,"Helvetica Neue",sans-serif;
+  font-size:15px;
+  font-weight:600;
+  line-height:1.6;
+}
+.admin-reference .ref-charts-grid>.ref-saved-card>h2::after {
+  content:none;
+}
+
+/* Match the neighboring dashboard chart headings. */
+.admin-reference .ref-charts-grid>.ref-saved-card>h2 {
+  font-family:inherit;
+  font-size:13px;
+  font-weight:700;
+  line-height:1.5;
+  color:var(--a-text);
+}

@@ -1,0 +1,4 @@
+export type Hospital = {id:string; name:string; address:string; phone:string; departments:{name:string; doctors:string[]}[]; verification_source?:string};
+export type HospitalVisit = {id:string; hospital_name:string; hospital_address:string; hospital_phone:string; student_name:string; email:string; phone:string; school:string; description:string; department:string; doctor:string|null; starts_at:string; status:string; response_note:string};
+export const visitStatus:Record<string,string> = {pending:"Chờ xác nhận từ bệnh viện",confirmed:"Đã xác nhận",rejected:"Không tiếp nhận",completed:"Đã hoàn tất",cancelled:"Đã hủy"};
+export const visitTime = (value:string) => new Date(value).toLocaleString("vi-VN", {timeZone:"Asia/Ho_Chi_Minh",hour:"2-digit",minute:"2-digit",day:"2-digit",month:"2-digit",year:"numeric"});

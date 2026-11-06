@@ -1,0 +1,10 @@
+.weekly-availability {max-width:1000px;color:var(--a-text,#273d37);}
+.weekly-availability > p {line-height:1.7;}
+.weekly-availability fieldset {border:0;padding:0;min-width:0;}
+.weekly-availability legend {font-weight:600;margin:18px 0;}
+.weekly-day {padding:20px;margin-bottom:14px;border:1px solid var(--a-line,#e8d8ca);border-radius:18px;background:var(--a-surface,#fffaf5);}
+.weekly-day header {display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+.weekly-day h2 {font-size:19px;margin:0;}
+.weekly-window {display:flex;align-items:end;flex-wrap:wrap;gap:16px;margin-top:16px;}
+.weekly-window label {display:grid;gap:8px;min-width:140px;flex:1;}
+.weekly-off {opacity:.65;margin-bottom:0;}

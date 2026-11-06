@@ -1,0 +1,149 @@
+/* Banner: title on the left, motto on the right, soft waves (no foliage).
+   Every admin/expert page uses this one banner, so height, type sizes and the
+   motto column are fixed to keep pages identical whatever the text length. */
+.ae-banner {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  min-height: 140px;
+  padding: 18px 32px;
+  border-radius: 18px;
+  background: linear-gradient(100deg, #fdf3ee 0%, #fbe6dd 60%, #f9dcd1 100%);
+  border: 1px solid var(--a-line);
+}
+html[data-theme="dark"] .ae-banner {
+  background: linear-gradient(100deg, #202b3c 0%, #26334a 60%, #2b3a50 100%);
+}
+.ae-banner-wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.ae-banner-wave .back {
+  fill: #f6dcd5;
+  opacity: 0.5;
+}
+.ae-banner-wave .front {
+  fill: #f3d0c8;
+  opacity: 0.55;
+}
+html[data-theme="dark"] .ae-banner-wave path {
+  fill: #33455e;
+}
+.ae-banner-copy,
+.ae-banner-motto {
+  position: relative;
+}
+.ae-banner-copy {
+  flex: 1;
+  min-width: 0;
+}
+.ae-banner-copy > span {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.18em;
+  color: #5d6b64;
+}
+.ae-banner-copy h1 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 6px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 42px;
+  color: #1f3d33;
+}
+.ae-banner-copy h1 svg {
+  /* Icons are passed at various sizes; keep them in step with the title. */
+  width: 32px;
+  height: 32px;
+  color: #e39a5c;
+  flex: none;
+}
+html[data-theme="dark"] .ae-banner-copy h1 {
+  color: #f5eee3;
+}
+.ae-banner-copy p {
+  /* At most two lines so long subtitles don't make one banner taller than the rest. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  max-width: 720px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--a-muted);
+}
+.ae-banner-motto {
+  /* Fixed width so the divider sits at the same spot on every page. */
+  flex: 0 0 300px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 16px;
+  padding-left: 26px;
+  border-left: 1.5px solid #c9a99a88;
+}
+.ae-banner-motto p {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 16px;
+  line-height: 24px;
+}
+.ae-banner-motto em {
+  white-space: nowrap;
+  /* Global `em` switches to Georgia, which stacks Vietnamese marks badly. */
+  font-family: inherit;
+  color: #3e4a44;
+}
+html[data-theme="dark"] .ae-banner-motto em {
+  color: #e5d9c8;
+}
+.ae-banner-motto > svg:not(:last-child) {
+  width: 26px;
+  height: 26px;
+  color: #e8a294;
+}
+.ae-banner-motto > svg:last-child {
+  grid-column: 1 / -1;
+  width: 140px;
+  height: 8px;
+  margin-left: 14px;
+  fill: none;
+  stroke: #e0806c;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+@media (max-width: 1100px) {
+  .ae-banner-motto {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .ae-banner {
+    min-height: 0;
+    padding: 14px 16px;
+  }
+  .ae-banner-copy h1 {
+    font-size: 28px;
+    line-height: 36px;
+  }
+  .ae-banner-copy h1 svg {
+    width: 26px;
+    height: 26px;
+  }
+}

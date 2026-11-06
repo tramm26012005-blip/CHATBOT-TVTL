@@ -1,0 +1,13 @@
+.git
+.venv
+frontend/node_modules
+frontend/.next
+**/__pycache__
+**/.env*
+!**/.env.example
+**/*.db
+**/*.log
+.env
+
+# Original PDFs are not needed in the runtime image; only the private index is copied.
+book

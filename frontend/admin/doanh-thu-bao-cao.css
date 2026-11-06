@@ -1,0 +1,46 @@
+.revenue-report-page {--report-green:#0a5a42;--report-line:#e7d2c1;color:var(--a-text);padding:4px 6px 22px;}
+.revenue-report-heading h1 {display:table;margin:0 0 10px;border-radius:18px;padding:3px 12px;background:#fff0e4;font:700 34px/1.3 "Playfair Display",Georgia,serif;color:var(--report-green);}
+.revenue-report-heading p {font-size:13px;line-height:1.8;margin:0 0 21px;color:var(--a-text);}
+.report-stat-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:20px;}
+.report-stat {position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;gap:10px;min-width:0;border:1px solid #cce0c5;border-radius:18px;padding:21px 23px;background:linear-gradient(120deg,#f5faf0,var(--a-surface));}
+.report-stat.peach {background:linear-gradient(120deg,#fff6ef,var(--a-surface));border-color:#efcfbd;}
+.report-stat strong {color:var(--report-green);font-size:clamp(23px,2.2vw,34px);line-height:1.2;overflow-wrap:anywhere;}
+.report-stat span {font-size:13px;line-height:1.6;}
+.report-stat svg {position:absolute;bottom:0;right:0;width:60%;height:75px;z-index:-1;}
+.report-stat path:first-child {fill:#d6e7c7;opacity:.45;}.report-stat path:last-child{fill:#c9e0b6;opacity:.35;}
+.report-stat.peach path:first-child{fill:#ffd4b4;}.report-stat.peach path:last-child{fill:#ffcca5;}
+.report-six-months,.report-download-section {padding:21px 24px;border:1px solid var(--report-line);border-radius:21px;background:var(--a-surface);}
+.report-six-months>header {display:flex;align-items:center;justify-content:space-between;gap:15px;}
+.report-six-months h2,.report-download-section h2 {margin:0;color:var(--report-green);font:700 27px/1.4 "Playfair Display",Georgia,serif;}
+.report-export-button,.report-full-download {display:inline-flex;align-items:center;justify-content:center;min-height:39px;padding:8px 23px;border:1px solid #388e70;border-radius:14px;background:#f6f8f0;color:var(--report-green);font-family:inherit;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;}
+.report-export-button:hover{background:#e7f0df;}
+.report-full-download {background:linear-gradient(110deg,#216e52,#0b5b40);color:white;}
+.revenue-report-page button:disabled {opacity:.45;cursor:not-allowed;}
+.revenue-report-page button:focus-visible,.report-download-controls input:focus-visible {outline:2px solid #73a793;outline-offset:3px;}
+.report-chart-legend {display:flex;justify-content:flex-end;flex-wrap:wrap;gap:20px;margin:15px 0 0;font-size:13px;}
+.report-chart-legend span {display:inline-flex;gap:7px;align-items:center;}
+.report-chart-legend i {width:24px;height:16px;display:inline-block;border-radius:4px;}
+.report-chart-legend .vip {background:linear-gradient(#a1c9b3,#79ad92);}.report-chart-legend .commission{background:linear-gradient(#ffdcc5,#f6bd9d);}
+.report-revenue-chart {display:block;width:100%;height:auto;max-height:300px;margin:7px 0 18px;}
+.report-revenue-chart text {font:12px "Be Vietnam Pro",Arial,sans-serif;fill:var(--a-text);}
+.report-grid-line {stroke:#e9ddd2;stroke-width:1;}
+.admin-reference .revenue-report-page table {width:100%;min-width:550px;border-collapse:separate;border-spacing:0;font-size:13px;}
+.revenue-report-page table th {padding:10px 15px;border:0;background:#e4ecd8;color:var(--report-green);font-size:13px;font-weight:700;}
+.revenue-report-page table th:first-child {border-radius:11px 0 0 0;}.revenue-report-page table th:last-child {border-radius:0 11px 0 0;}
+.revenue-report-page table td {padding:9px 15px;border:0;border-bottom:1px solid #ecddcf;}
+.revenue-report-page table td:first-child {color:var(--report-green);}
+.report-download-section {margin-top:20px;}
+.report-download-section p {font-size:13px;line-height:1.8;margin:8px 0 16px;}
+.report-download-controls {display:flex;align-items:flex-end;flex-wrap:wrap;gap:15px;}
+.report-download-controls label {display:grid;gap:7px;margin:0;font-size:12px;font-weight:600;color:var(--report-green);}
+.report-download-controls input {min-height:39px;padding:8px 12px;border:1px solid var(--report-line);border-radius:10px;background:var(--a-surface);color:var(--a-text);font:inherit;}
+.report-download-section small {display:block;margin-top:15px;color:var(--a-muted);font-size:11px;line-height:1.7;}
+html[data-theme="dark"] .revenue-report-page {--report-green:#b4dec8;--report-line:var(--a-line);}
+html[data-theme="dark"] .revenue-report-heading h1,html[data-theme="dark"] .report-stat,html[data-theme="dark"] .report-stat.peach {background:var(--a-surface);border-color:var(--a-line);}
+html[data-theme="dark"] .report-stat svg {opacity:.2;}
+html[data-theme="dark"] .report-grid-line,html[data-theme="dark"] .revenue-report-page table td {stroke:var(--a-line);border-color:var(--a-line);}
+html[data-theme="dark"] .revenue-report-page table th {background:#344c3f;}
+html[data-theme="dark"] .report-export-button {background:var(--a-soft);}
+@media(max-width:1100px) {.report-stat-grid{gap:12px;}.report-stat{padding:18px 15px;}.report-stat span{font-size:11px;}}
+@media(max-width:800px) {.report-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.report-revenue-chart{min-width:620px;}.report-chart-wrap{overflow-x:auto;}}
+@media(max-width:550px) {.revenue-report-page{padding-inline:0;}.revenue-report-heading h1{font-size:28px;}.report-stat-grid{gap:9px;}.report-stat{padding:16px 12px;}.report-stat strong{font-size:22px;}.report-six-months,.report-download-section{padding:16px 12px;}.report-six-months h2,.report-download-section h2{font-size:23px;}.report-export-button,.report-full-download{padding:8px 14px;}.report-download-controls label{flex:1;min-width:130px;}.report-download-controls input{width:100%;}}

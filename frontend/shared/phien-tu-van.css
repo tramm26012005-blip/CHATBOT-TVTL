@@ -1,0 +1,13 @@
+.consultation-panel {padding:20px;margin:16px 0;border:1px solid var(--a-line,#e8d8ca);border-radius:18px;background:var(--a-surface,#fffaf5);color:var(--a-text,#273d37);min-width:0;}
+.consultation-panel p {margin:10px 0;line-height:1.6;}
+.consultation-panel small {display:block;line-height:1.6;opacity:.8;}
+.consultation-panel .button-row {display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;}
+.consultation-panel .consultation-report,.consultation-error {color:#a63e31;}
+.consultation-feedback {border-top:1px solid var(--a-line,#e8d8ca);margin-top:16px;padding-top:16px;}
+.consultation-feedback label {display:grid;gap:8px;margin:12px 0;}
+.consultation-balances {display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;}
+.consultation-balances strong {display:block;font-size:24px;}
+.consultation-admin-item {padding:16px 0;border-top:1px solid var(--a-line,#e8d8ca);}
+.consultation-admin-item h3 {margin:8px 0;}
+.booking-card {flex-wrap:wrap;}
+.booking-card > .consultation-panel {order:3;flex-basis:100%;margin-bottom:0;}

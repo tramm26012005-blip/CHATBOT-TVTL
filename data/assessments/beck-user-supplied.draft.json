@@ -1,0 +1,482 @@
+{
+  "id": "beck-user-supplied-draft",
+  "version": "0.1-draft",
+  "status": "draft_not_for_clinical_use",
+  "published": false,
+  "source": "User-provided text; not verified against Medlatec or licensed edition",
+  "rights_verified": false,
+  "clinical_reviewed": false,
+  "recall_period_days": 14,
+  "instructions": "Đọc lần lượt 21 nhóm câu hỏi và chọn 1 đáp án mô tả đúng nhất tình trạng trong 2 tuần gần đây nhất.",
+  "scoring": {
+    "status": "user_supplied_unverified",
+    "method": "sum",
+    "min": 0,
+    "max": 63,
+    "bands": [
+      {
+        "label": "Không đáng kể / Rất nhẹ",
+        "min": 0,
+        "max": 13
+      },
+      {
+        "label": "Nhẹ",
+        "min": 14,
+        "max": 19
+      },
+      {
+        "label": "Vừa",
+        "min": 20,
+        "max": 28
+      },
+      {
+        "label": "Nặng",
+        "min": 29,
+        "max": 63
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": 1,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không cảm thấy buồn."
+        },
+        {
+          "value": 1,
+          "text": "Tôi cảm thấy buồn phần lớn thời gian."
+        },
+        {
+          "value": 2,
+          "text": "Lúc nào tôi cũng cảm thấy buồn."
+        },
+        {
+          "value": 3,
+          "text": "Tôi quá buồn hoặc bất hạnh đến mức không chịu nổi."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không hề nản lòng về tương lai."
+        },
+        {
+          "value": 1,
+          "text": "Tôi cảm thấy nản lòng về tương lai hơn trước đây."
+        },
+        {
+          "value": 2,
+          "text": "Tôi không kỳ vọng mọi chuyện sẽ tốt đẹp hơn cho mình."
+        },
+        {
+          "value": 3,
+          "text": "Tôi cảm thấy tương lai hoàn toàn vô vọng và mọi thứ sẽ chỉ tồi tệ đi."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không cảm thấy mình là kẻ thất bại."
+        },
+        {
+          "value": 1,
+          "text": "Tôi thất bại nhiều hơn so với hồi nhỏ."
+        },
+        {
+          "value": 2,
+          "text": "Nhìn lại cuộc đời, tôi thấy mình đã thất bại rất nhiều lần."
+        },
+        {
+          "value": 3,
+          "text": "Tôi cảm thấy mình là một kẻ thất bại hoàn toàn trong cuộc sống."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi vẫn có được sự thích thú từ những việc mình từng thích như trước đây."
+        },
+        {
+          "value": 1,
+          "text": "Tôi ít thích thú với mọi việc hơn trước."
+        },
+        {
+          "value": 2,
+          "text": "Tôi hầu như không còn tìm thấy niềm vui hay sự thích thú thực sự ở bất cứ việc gì nữa."
+        },
+        {
+          "value": 3,
+          "text": "Tôi hoàn toàn mất hết hứng thú với mọi thứ và không thể tận hưởng bất cứ điều gì."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi thực sự không cảm thấy có lỗi chút nào."
+        },
+        {
+          "value": 1,
+          "text": "Tôi cảm thấy có lỗi về nhiều việc mình đã làm hoặc lẽ ra nên làm."
+        },
+        {
+          "value": 2,
+          "text": "Phần lớn thời gian tôi cảm thấy mình có tội."
+        },
+        {
+          "value": 3,
+          "text": "Lúc nào tôi cũng cảm thấy mình có tội và tội lỗi chồng chất."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không cảm thấy mình đang bị trừng phạt."
+        },
+        {
+          "value": 1,
+          "text": "Tôi cảm thấy có điều gì đó tồi tệ có thể xảy ra với mình."
+        },
+        {
+          "value": 2,
+          "text": "Tôi cảm thấy mình đáng bị trừng phạt."
+        },
+        {
+          "value": 3,
+          "text": "Tôi cảm thấy mình đang bị trừng phạt ngay lúc này."
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "options": [
+        {
+          "value": 0,
+          "text": "Cảm nhận của tôi về bản thân vẫn như bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Tôi mất lòng tin vào bản thân."
+        },
+        {
+          "value": 2,
+          "text": "Tôi thấy thất vọng về chính mình."
+        },
+        {
+          "value": 3,
+          "text": "Tôi căm ghét chính bản thân mình."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không tự chỉ trích hayổ lỗi cho mình nhiều hơn bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Tôi hay để ý đến những khuyết điểm hoặc lỗi lầm của bản thân hơn."
+        },
+        {
+          "value": 2,
+          "text": "Tôi tự trách mình về mọi lỗi lầm xảy ra."
+        },
+        {
+          "value": 3,
+          "text": "Tôi tự phán xét và đổ lỗi cho bản thân về mọi điều tồi tệ xảy ra."
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không có chút ý định tự sát nào cả."
+        },
+        {
+          "value": 1,
+          "text": "Tôi có nghĩ đến chuyện tự sát nhưng sẽ không làm thế."
+        },
+        {
+          "value": 2,
+          "text": "Tôi muốn tự sát."
+        },
+        {
+          "value": 3,
+          "text": "Tôi sẽ tự sát nếu có cơ hội."
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không khóc nhiều hơn bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Bây giờ tôi hay khóc hơn trước đây."
+        },
+        {
+          "value": 2,
+          "text": "Hiện tại tôi khóc vì những chuyện rất nhỏ nhặt."
+        },
+        {
+          "value": 3,
+          "text": "Tôi rất muốn khóc nhưng lại không thể khóc nổi dù rất buồn."
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không thấy bồn chồn hay lo lắng hơn bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Tôi cảm thấy bứt rứt, số ruột và bồn chồn hơn bình thường."
+        },
+        {
+          "value": 2,
+          "text": "Tôi cảm thấy khó có thể ngồi yên một chỗ vì quá bồn chồn."
+        },
+        {
+          "value": 3,
+          "text": "Tôi phải di chuyển liên tục hoặc làm gì đó để giải tỏa sự bứt rứt trong người."
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi vẫn có động lực làm việc và sinh hoạt như trước."
+        },
+        {
+          "value": 1,
+          "text": "Tôi phải tốn nhiều sức hơn bình thường để bắt đầu làm một việc gì đó."
+        },
+        {
+          "value": 2,
+          "text": "Tôi phải cố gắng rất nhiều mới làm được một việc nhỏ."
+        },
+        {
+          "value": 3,
+          "text": "Tôi hoàn toàn không đủ sức lực để làm bất cứ việc gì nữa."
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi đưa ra các quyết định dễ dàng như mọi khi."
+        },
+        {
+          "value": 1,
+          "text": "Tôi thấy khó đưa ra quyết định hơn trước."
+        },
+        {
+          "value": 2,
+          "text": "Khả năng quyết định của tôi bị suy giảm rõ rệt so với trước đây."
+        },
+        {
+          "value": 3,
+          "text": "Tôi hoàn toàn không thể đưa ra bất kỳ quyết định nào nữa."
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không cảm thấy mình kém cỏi hay vô dụng."
+        },
+        {
+          "value": 1,
+          "text": "Tôi nghĩ mình không còn hữu ích và có giá trị như trước đây."
+        },
+        {
+          "value": 2,
+          "text": "So với mọi người xung quanh, tôi cảm thấy mình vô dụng hơn rất nhiều."
+        },
+        {
+          "value": 3,
+          "text": "Tôi cảm thấy bản thân hoàn toàn vô giá trị."
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "options": [
+        {
+          "value": 0,
+          "text": "Năng lượng của tôi vẫn bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Tôi có ít năng lượng để làm việc hơn trước."
+        },
+        {
+          "value": 2,
+          "text": "Tôi không còn đủ năng lượng để làm hầu hết các việc nữa."
+        },
+        {
+          "value": 3,
+          "text": "Tôi kiệt sức và không có chút năng lượng nào để làm bất cứ việc gì."
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "options": [
+        {
+          "value": 0,
+          "text": "Giấc ngủ của tôi không có gì thay đổi."
+        },
+        {
+          "value": 1,
+          "text": "Tôi ngủ nhiều hơn một chút hoặc ít hơn một chút so với bình thường."
+        },
+        {
+          "value": 2,
+          "text": "Tôi ngủ nhiều hơn hẳn hoặc bị mất ngủ (khó ngủ, hay tỉnh giấc giữa đêm) rõ rệt."
+        },
+        {
+          "value": 3,
+          "text": "Tôi mất ngủ trầm trọng gần như suốt đêm hoặc ngủ li bì cả ngày không muốn dậy."
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không dễ cáu kỉnh hơn bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Tôi dễ bực bội và cáu kỉnh hơn mọi khi."
+        },
+        {
+          "value": 2,
+          "text": "Lúc nào tôi cũng cảm thấy bực dọc và khó chịu."
+        },
+        {
+          "value": 3,
+          "text": "Tôi cáu gắt với mọi thứ xung quanh và gần như chẳng còn kiên nhẫn với ai."
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "options": [
+        {
+          "value": 0,
+          "text": "Sự thèm ăn của tôi không thay đổi."
+        },
+        {
+          "value": 1,
+          "text": "Tôi ăn ít hơn hoặc nhiều hơn một chút so với bình thường."
+        },
+        {
+          "value": 2,
+          "text": "Tôi chán ăn hẳn hoặc thèm ăn liên tục, tăng/giảm cân rõ rệt."
+        },
+        {
+          "value": 3,
+          "text": "Tôi hoàn toàn không muốn ăn gì hoặc lúc nào cũng phải ăn vô độ."
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi vẫn tập trung làm việc tốt như mọi khi."
+        },
+        {
+          "value": 1,
+          "text": "Tôi khó tập trung vào công việc hoặc đọc sách hơn bình thường."
+        },
+        {
+          "value": 2,
+          "text": "Tôi không thể giữ sự chú ý vào bất cứ điều gì trong thời gian dài."
+        },
+        {
+          "value": 3,
+          "text": "Tôi hoàn toàn không thể tập trung để làm hay đọc bất cứ thứ gì."
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không mệt mỏi hơn bình thường."
+        },
+        {
+          "value": 1,
+          "text": "Tôi thấy mệt mỏi nhanh hơn trước khi làm việc."
+        },
+        {
+          "value": 2,
+          "text": "Tôi mệt mỏi vì hầu như bất cứ việc gì mình làm."
+        },
+        {
+          "value": 3,
+          "text": "Tôi quá mệt mỏi để làm bất cứ việc gì."
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "options": [
+        {
+          "value": 0,
+          "text": "Tôi không nhận thấy sự thay đổi nào về ham muốn gần gũi."
+        },
+        {
+          "value": 1,
+          "text": "Tôi ít hứng thú với chuyện đó hơn trước."
+        },
+        {
+          "value": 2,
+          "text": "Bây giờ tôi hầu như không còn chút hứng thú nào."
+        },
+        {
+          "value": 3,
+          "text": "Tôi hoàn toàn mất hẳn ham muốn."
+        }
+      ]
+    }
+  ]
+}

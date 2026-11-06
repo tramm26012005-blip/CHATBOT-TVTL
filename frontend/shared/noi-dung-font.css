@@ -1,0 +1,9 @@
+/* Body copy uses the same sans-serif as the plan benefits. Preserve branding,
+   section headings, navigation and every banner/hero's existing typography. */
+:is(.admin-shell .admin-content, .interior-shell #main-content)
+:is(p, li, td, th, dt, dd, label, input, textarea, select, option, button, a, span, strong, small, summary)
+:not(h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .brand-wordmark *, [class*="banner"] *, [class*="hero"] *, .ref-welcome *, .ref-pill, .ref-pill *, .payment-status, .payment-status *) {
+  font-family: "Be Vietnam Pro", Arial, "Helvetica Neue", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}

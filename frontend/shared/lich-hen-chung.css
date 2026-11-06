@@ -1,0 +1,87 @@
+.ab-title-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #e3eee7;
+  color: #2f6553;
+  flex: none;
+}
+html[data-theme="dark"] .ab-title-icon {
+  background: #1f3b30;
+  color: #9bd8bb;
+}
+.ab-day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--a-line);
+  background: var(--a-surface);
+  color: var(--a-muted);
+}
+.ab-day input {
+  border: 0;
+  background: none;
+  outline: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--a-text);
+}
+.ab-day button {
+  border: 0;
+  background: none;
+  color: var(--a-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ab-table {
+  min-width: 1080px;
+}
+.ab-when {
+  line-height: 1.35;
+}
+.ab-when small {
+  display: block;
+  color: var(--a-muted);
+  font-size: 12.5px;
+}
+.ab-topic {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ab-dash {
+  color: var(--a-muted);
+}
+.au-pill.ab-online { background: #e3f1e8; color: #2f7a55; }
+.au-pill.ab-offline { background: #fde3df; color: #c4392e; }
+.au-pill.ab-pending { background: #fdf0d9; color: #b9781b; border-radius: 999px; }
+.au-pill.ab-confirmed { background: #e3f1e8; color: #2f7a55; border-radius: 999px; }
+.au-pill.ab-completed { background: #e1eaf8; color: #3d6ab0; border-radius: 999px; }
+.au-pill.ab-rejected { background: #fde3df; color: #c4392e; border-radius: 999px; }
+.au-pill.ab-cancelled { background: #eeeeea; color: #6f6f68; border-radius: 999px; }
+html[data-theme="dark"] .au-pill.ab-online,
+html[data-theme="dark"] .au-pill.ab-confirmed { background: #1f3b30; color: #9bd8bb; }
+html[data-theme="dark"] .au-pill.ab-offline,
+html[data-theme="dark"] .au-pill.ab-rejected { background: #45261f; color: #f3a08c; }
+html[data-theme="dark"] .au-pill.ab-pending { background: #45391f; color: #f0cc8a; }
+html[data-theme="dark"] .au-pill.ab-completed { background: #23304d; color: #a9c0f5; }
+html[data-theme="dark"] .au-pill.ab-cancelled { background: var(--a-soft); color: var(--a-muted); }
+.ab-wide {
+  grid-column: 1 / -1;
+}
+@media (max-width: 1540px) {
+  .ab-table {
+    min-width: 960px;
+  }
+  .ab-topic {
+    max-width: 160px;
+  }
+}

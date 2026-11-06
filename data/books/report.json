@@ -1,0 +1,186 @@
+{
+  "documents": [
+    {
+      "file": "An_Unquiet_Mind.pdf",
+      "pages": 4,
+      "readable_pages": 3,
+      "chunks": 10,
+      "warnings": [
+        "Bản giới thiệu Wikipedia, không phải toàn văn sách."
+      ],
+      "title": "Giới thiệu An Unquiet Mind (bản Wikipedia)",
+      "author": "Wikipedia contributors",
+      "language": "en",
+      "kind": "book_overview"
+    },
+    {
+      "file": "D.1-ADHD-2020-vi-Final.pdf",
+      "pages": 31,
+      "readable_pages": 31,
+      "chunks": 108,
+      "warnings": [
+        "Tài liệu chuyên môn trẻ em; không dùng để chẩn đoán hoặc hướng dẫn thuốc cho sinh viên."
+      ],
+      "title": "Rối loạn tăng động giảm chú ý — IACAPAP, phiên bản 2020",
+      "author": "Anthony de Freitas de Sousa và cộng sự",
+      "language": "vi",
+      "kind": "professional_pediatric"
+    },
+    {
+      "file": "dung-de-tram-cam-tan-cong-ban.pdf",
+      "pages": 410,
+      "readable_pages": 409,
+      "chunks": 685,
+      "warnings": [],
+      "title": "Đừng để trầm cảm tấn công bạn",
+      "author": "David D. Burns",
+      "language": "vi",
+      "kind": "psychoeducation"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 1.pdf",
+      "pages": 169,
+      "readable_pages": 167,
+      "chunks": 286,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 1",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 10.pdf",
+      "pages": 178,
+      "readable_pages": 176,
+      "chunks": 219,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 10",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 11.pdf",
+      "pages": 178,
+      "readable_pages": 176,
+      "chunks": 201,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 11",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 2.pdf",
+      "pages": 168,
+      "readable_pages": 166,
+      "chunks": 294,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 2",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 3.pdf",
+      "pages": 169,
+      "readable_pages": 167,
+      "chunks": 225,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 3",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 4.pdf",
+      "pages": 169,
+      "readable_pages": 167,
+      "chunks": 230,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 4",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 5.pdf",
+      "pages": 137,
+      "readable_pages": 135,
+      "chunks": 217,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 5",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 6.pdf",
+      "pages": 137,
+      "readable_pages": 135,
+      "chunks": 209,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 6",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 7.pdf",
+      "pages": 161,
+      "readable_pages": 156,
+      "chunks": 222,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 7",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 8.pdf",
+      "pages": 162,
+      "readable_pages": 157,
+      "chunks": 228,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 8",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "full bộ hạt giống tâm hồn/Hat giong tam hon 9.pdf",
+      "pages": 178,
+      "readable_pages": 176,
+      "chunks": 194,
+      "warnings": [],
+      "title": "Hạt giống tâm hồn — tập 9",
+      "author": "Nhiều tác giả",
+      "language": "vi",
+      "kind": "inspirational_stories"
+    },
+    {
+      "file": "Tim-minh-trong-the-gioi-hau-tuo---Dang-Hoang-Giang-daebff25-70fc-4065-95b3-35cb2efe6fc5.pdf",
+      "pages": 355,
+      "readable_pages": 345,
+      "chunks": 660,
+      "warnings": [],
+      "title": "Tìm mình trong thế giới hậu tuổi thơ",
+      "author": "Đặng Hoàng Giang",
+      "language": "vi",
+      "kind": "narrative"
+    },
+    {
+      "file": "Đại Dương Đen - Đặng Hoàng Giang.pdf",
+      "pages": 379,
+      "readable_pages": 356,
+      "chunks": 685,
+      "warnings": [],
+      "title": "Đại dương đen",
+      "author": "Đặng Hoàng Giang",
+      "language": "vi",
+      "kind": "narrative"
+    }
+  ],
+  "total_chunks": 4673,
+  "page_numbering": "Trang PDF tính từ 1, có thể khác số trang in trong sách."
+}

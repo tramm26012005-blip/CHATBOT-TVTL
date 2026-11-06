@@ -1,0 +1,88 @@
+/* Scalable copy of the student sidebar wordmark (globals.css "Sidebar wordmark").
+   Everything is sized in em, so a placement only sets `font-size` (= title size). */
+.brand-wordmark.is-scaled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.33em;
+  font-size: 24px;
+  color: #1f4a42;
+  text-decoration: none;
+}
+/* The supplied logo has wide cream margins; trim them so the drawing matches the wordmark's height. */
+.brand-wordmark.is-scaled .supplied-brand-logo {
+  --logo-size: 3.33em;
+  width: var(--logo-size);
+  height: var(--logo-size);
+  margin: calc(var(--logo-size) * -0.15) calc(var(--logo-size) * -0.12) calc(var(--logo-size) * -0.19);
+  clip-path: circle(48% at 50% 50%);
+  flex: none;
+}
+.supplied-brand-logo {
+  border-radius: 50%;
+}
+.brand-wordmark.is-scaled .brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+.brand-wordmark.is-scaled .brand-title {
+  position: relative;
+  display: inline-block;
+  padding-right: 0.5em;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  color: #1f4a42;
+  white-space: nowrap;
+}
+.brand-wordmark.is-scaled .brand-leaf {
+  position: absolute;
+  top: -0.25em;
+  right: 0.04em;
+  width: 0.58em;
+  height: 0.5em;
+}
+/* The swoosh spans the whole title, heart ending under the leaf. */
+.brand-wordmark.is-scaled .brand-swoosh {
+  align-self: stretch;
+  width: auto;
+  height: auto;
+  max-width: none;
+  aspect-ratio: 200 / 26;
+  margin: 0.02em 0 0.17em;
+  overflow: visible;
+}
+.brand-wordmark.is-scaled .brand-swoosh path {
+  stroke-width: 1.6;
+}
+.brand-wordmark.is-scaled .brand-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.67em;
+  margin: 0;
+  padding: 0.4em 1.07em;
+  border-radius: 999px;
+  background: #e3ece3;
+  color: #2f6553;
+  font-family: "Be Vietnam Pro", Arial, sans-serif;
+  font-size: 0.32em;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.brand-wordmark.is-scaled .brand-sub::before,
+.brand-wordmark.is-scaled .brand-sub::after {
+  width: 1.07em;
+}
+html[data-theme="dark"] .brand-wordmark.is-scaled,
+html[data-theme="dark"] .brand-wordmark.is-scaled .brand-title {
+  color: #dce7df;
+}
+html[data-theme="dark"] .brand-wordmark.is-scaled .brand-sub {
+  background: #30473d;
+  color: #b0d0c3;
+}

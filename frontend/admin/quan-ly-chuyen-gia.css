@@ -1,0 +1,44 @@
+/* Table extras */
+.ae-table {
+  min-width: 960px;
+}
+.ae-table td strong {
+  font-weight: 600;
+}
+.ae-clip {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ae-muted {
+  color: var(--a-muted);
+  font-size: 12.5px;
+}
+.ae-status {
+  height: 36px;
+  padding: 0 32px 0 14px;
+  border-radius: 9px;
+  border: 0;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ae-status.active {
+  background-color: #e3f1e8;
+  color: #2f7a55;
+}
+.ae-status.paused {
+  background-color: #fde6e3;
+  color: #c4513d;
+}
+html[data-theme="dark"] .ae-status.active { background-color: #1f3b30; color: #9bd8bb; }
+html[data-theme="dark"] .ae-status.paused { background-color: #45261f; color: #f3a08c; }
+.au-pill.paused {
+  background: #fde6e3;
+  color: #c4513d;
+  border-radius: 999px;
+}
+.ae-wide {
+  grid-column: 1 / -1;
+}
+

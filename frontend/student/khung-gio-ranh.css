@@ -1,0 +1,15 @@
+.available-slots {margin:18px 0;}
+.available-slots h3 {font-size:17px;}
+.available-slot-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:9px;max-height:310px;overflow:auto;padding:4px;}
+.available-slot-grid button {border:1px solid #b4caba;border-radius:12px;background:var(--surface,#f3f8f0);padding:12px 8px;color:var(--text,#214b40);font:inherit;cursor:pointer;}
+.available-slot-grid button small {display:block;font-size:10px;margin-top:5px;}
+.available-slot-grid button.is-selected {background:#2c6656;color:white;border-color:#2c6656;box-shadow:0 0 0 2px #bed8c8;}
+.available-slot-grid button:disabled {background:#d8d6d0;color:#686b66;border-color:#cac8c1;opacity:.62;cursor:not-allowed;box-shadow:none;}
+.expert-directory .expert-card.is-busy {opacity:.5;filter:grayscale(.65);}
+.expert-directory .expert-card.is-busy button {cursor:not-allowed;}
+.expert-directory .expert-availability-status {font-size:13px;line-height:1.5;margin:14px 0;color:var(--text,#214b40);}
+.expert-directory-actions > .expert-availability-status {grid-column:1 / -1;margin:0 0 4px;}
+.expert-directory-actions > .button {width:100%;min-height:44px;align-self:stretch;justify-content:center;}
+.expert-availability-filters {display:flex;gap:16px;flex-wrap:wrap;margin:18px 0;}
+.expert-availability-filters label {display:grid;gap:7px;min-width:180px;flex:1;}
+.expert-availability-filters input,.expert-availability-filters select {width:100%;}

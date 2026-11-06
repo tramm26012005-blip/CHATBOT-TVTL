@@ -1,0 +1,16 @@
+{
+  "builtin-ocean": {
+    "url": "/audio/recorded-ocean.ogg",
+    "duration_seconds": 384,
+    "sound_kind": "field-recording-ocean",
+    "rights_note": "Jarrod stanley · CC0 · https://commons.wikimedia.org/wiki/File:Ocean_Waves_on_a_Tropical_Beach.ogg",
+    "description": "Bản ghi sóng biển vỗ bờ, không có nhạc nền."
+  },
+  "builtin-rain": {
+    "url": "/audio/recorded-rain.ogg",
+    "duration_seconds": 10,
+    "sound_kind": "field-recording-rain",
+    "rights_note": "ジダネ · Public domain · https://commons.wikimedia.org/wiki/File:Rain.ogg",
+    "description": "Bản ghi tiếng mưa thật, không có nhạc nền."
+  }
+}

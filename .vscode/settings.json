@@ -1,0 +1,13 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+  "python.terminal.useEnvFile": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.venv": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache": true,
+    "**/__pycache__": true,
+    "**/node_modules": true,
+    "**/.next": true
+  }
+}
