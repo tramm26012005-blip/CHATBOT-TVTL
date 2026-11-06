@@ -6,11 +6,11 @@ from app.db import Base, engine, SessionLocal, User, LoginSession, Audit
 from app.migrations import initialize_database
 
 parser = argparse.ArgumentParser()
-parser.add_argument('command', choices=['init-db', 'upgrade-db', 'make-admin', 'create-demo'])
+parser.add_argument('command', choices=['init-db', 'upgrade-db', 'make-admin', 'create-demo', 'demo-serve'])
 parser.add_argument('--email')
 args = parser.parse_args()
 initialize_database()
-if args.command == 'create-demo':
+if args.command in ('create-demo', 'demo-serve'):
     from app.security import passwords
     email = os.environ.get('DEMO_EMAIL', '').strip().lower()
     password = os.environ.get('DEMO_PASSWORD', '')
@@ -27,6 +27,9 @@ if args.command == 'create-demo':
             db.add(Audit(actor='operator', action='account:create-demo'))
             db.commit()
             print('Demo account created.')
+    if args.command == 'demo-serve':
+        import uvicorn
+        uvicorn.run('app.main:app', host='0.0.0.0', port=int(os.environ.get('PORT', '8000')), access_log=False)
 elif args.command == 'make-admin':
     if not args.email:
         parser.error('--email required')
