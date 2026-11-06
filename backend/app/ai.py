@@ -113,10 +113,24 @@ def output_blocked(result):
     return any(bool(value) for key, value in categories.items() if key not in harmless_discussion)
 
 
+_shared_client = None
+
+
 def client():
+    global _shared_client
     if not settings().openai_api_key:
         raise HTTPException(503, 'Chưa cấu hình OpenAI API key. Hiện chưa thể trò chuyện với AI.')
-    return AsyncOpenAI(api_key=settings().openai_api_key, timeout=45, max_retries=1)
+    if _shared_client is None:
+        _shared_client = AsyncOpenAI(api_key=settings().openai_api_key, timeout=45, max_retries=1)
+    return _shared_client
+
+
+async def close_client():
+    global _shared_client
+    existing = _shared_client
+    _shared_client = None
+    if existing is not None:
+        await existing.close()
 
 
 def chat_model():
@@ -146,17 +160,20 @@ async def safe_reply(messages):
     # Entire output is checked before disclosure; client streaming is progressive delivery.
     user_text = '\n'.join(m.content for m in messages[-12:] if m.role == 'user')
     context = None
-    try:
-        check = await moderate(user_text)
-    except Exception:
-        if not keyword_risk(user_text):
-            raise
     # Scope routing runs on every turn; keyword presence is never a diagnosis.
-    try:
-        assessment = await api.responses.parse(model=model, instructions=SUPPORT_ROUTING_PROMPT, input=[m.model_dump() for m in messages], text_format=SupportContext, max_output_tokens=500, store=False)
+    # Both checks read the same input. Wait for both before using either result.
+    check, assessment = await asyncio.gather(
+        moderate(user_text),
+        api.responses.parse(model=model, instructions=SUPPORT_ROUTING_PROMPT, input=[m.model_dump() for m in messages], text_format=SupportContext, max_output_tokens=500, store=False),
+        return_exceptions=True,
+    )
+    for result in (check, assessment):
+        if isinstance(result, BaseException) and not isinstance(result, Exception):
+            raise result
+    if isinstance(check, Exception) and not keyword_risk(user_text):
+        raise check
+    if not isinstance(assessment, Exception):
         context = assessment.output_parsed
-    except Exception:
-        context = None
     if context is None or not grounded_context(context, messages):
         return routing_failure_reply(messages)
     risk = context.route != 'ordinary'

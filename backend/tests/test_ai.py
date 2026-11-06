@@ -40,6 +40,59 @@ def run(*turns):
     return asyncio.run(ai.safe_reply([Message(role=role, content=text) for role, text in turns]))
 
 
+def test_input_checks_overlap_and_generation_waits_for_both(provider, monkeypatch):
+    async def exercise():
+        moderation_started = asyncio.Event()
+        routing_started = asyncio.Event()
+        allow_moderation = asyncio.Event()
+        allow_routing = asyncio.Event()
+
+        async def moderate(text):
+            if not moderation_started.is_set():
+                moderation_started.set()
+                await allow_moderation.wait()
+            return moderation()
+
+        async def parse(**kwargs):
+            routing_started.set()
+            await allow_routing.wait()
+            return provider.parse.return_value
+
+        monkeypatch.setattr(ai, 'moderate', moderate)
+        provider.parse.side_effect = parse
+        task = asyncio.create_task(ai.safe_reply([Message(role='user', content='Mình đang lo kỳ thi.')]))
+        try:
+            await asyncio.wait_for(asyncio.gather(moderation_started.wait(), routing_started.wait()), 2)
+            provider.create.assert_not_awaited()
+            allow_routing.set()
+            await asyncio.sleep(0)
+            provider.create.assert_not_awaited()
+            allow_moderation.set()
+            reply, risk = await asyncio.wait_for(task, 2)
+            assert reply == 'Phản hồi riêng theo ngữ cảnh.' and not risk
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(exercise())
+
+
+def test_shared_client_reused_closed_and_recreated(monkeypatch):
+    fake = SimpleNamespace(close=AsyncMock())
+    factory = Mock(return_value=fake)
+    monkeypatch.setattr(ai, '_shared_client', None)
+    monkeypatch.setattr(ai, 'settings', lambda: SimpleNamespace(openai_api_key='test-key'))
+    monkeypatch.setattr(ai, 'AsyncOpenAI', factory)
+    assert ai.client() is ai.client()
+    factory.assert_called_once()
+    asyncio.run(ai.close_client())
+    fake.close.assert_awaited_once()
+    assert ai._shared_client is None
+    ai.client()
+    assert factory.call_count == 2
+    asyncio.run(ai.close_client())
+
+
 def test_ordinary_chat_generated_without_crisis_router(provider):
     reply, risk = run(('user', 'Hôm nay mình thi tốt.'))
     assert reply == 'Phản hồi riêng theo ngữ cảnh.' and not risk

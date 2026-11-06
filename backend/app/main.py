@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .config import settings
+from . import ai
 from .security import allowed_web_origins
 from .migrations import initialize_database
 from .consultation_api import router as consultation_router
@@ -48,6 +49,7 @@ async def lifespan(app):
             await task
         except asyncio.CancelledError:
             pass
+        await ai.close_client()
 
 
 app = FastAPI(title='Tư vấn tâm lý API', version='0.1.0', lifespan=lifespan)
