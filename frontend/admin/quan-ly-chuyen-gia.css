@@ -24,8 +24,8 @@
   cursor: pointer;
 }
 .ae-status.active {
-  background-color: #e3f1e8;
-  color: #2f7a55;
+  background-color: #e9f2cf;
+  color: #14602a;
 }
 .ae-status.paused {
   background-color: #fde6e3;

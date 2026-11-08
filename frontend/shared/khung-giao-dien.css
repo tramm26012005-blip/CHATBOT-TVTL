@@ -894,3 +894,43 @@ html[data-theme="dark"] .admin-pill.soon { background: #45301f; color: #f3bf91; 
 .admin-topbar:has(.admin-welcome-wish) .admin-bell > svg { width:21px; height:21px; }
 .admin-topbar .admin-welcome-wish { font-size:17px; }
 @media(max-width:600px) { .admin-topbar .admin-welcome-wish { font-size:14px; } }
+
+/* Admin and expert portals share the login screen's green and cream in light mode. */
+html:not([data-theme="dark"]) .admin-shell {
+  --a-bg: #f4f7e3;
+  --a-sidebar: #fbf5e6;
+  --a-surface: #fffdf6;
+  --a-line: #ded9c0;
+  --a-soft: #f4f7e3;
+  --a-green: #1d7a2b;
+  --a-up: #1d7a2b;
+  --a-banner: linear-gradient(100deg, #fbf5e6 0%, #e9f2cf 55%, #d6e9ad 100%);
+  --a-series-a: #1d7a2b;
+  --a-series-b: #8fc24a;
+  --action-coral: #14602a;
+  --action-coral-dark: #0f5a26;
+  --action-coral-soft: #e9f2cf;
+  --action-coral-border: #b9d68c;
+  --action-coral-gradient: linear-gradient(100deg, #0f5a26 0%, #1d7a2b 55%, #78b61f 100%);
+  --action-shadow: #3f7d2a33;
+}
+/* Shared portal pieces in the same palette. */
+html:not([data-theme="dark"]) .admin-shell .ae-banner { background: var(--a-banner); }
+html:not([data-theme="dark"]) .admin-shell .ae-banner-wave .back { fill: #dcebb8; }
+html:not([data-theme="dark"]) .admin-shell .ae-banner-wave .front { fill: #cde2a0; }
+html:not([data-theme="dark"]) .admin-shell .ae-banner-copy h1 { color: #14602a; }
+html:not([data-theme="dark"]) .admin-shell .brand-wordmark.is-scaled,
+html:not([data-theme="dark"]) .admin-shell .brand-wordmark.is-scaled .brand-title { color: #14602a; }
+html:not([data-theme="dark"]) .admin-shell .brand-wordmark.is-scaled .brand-sub { background: #e0eeb7; color: #14602a; }
+html:not([data-theme="dark"]) .admin-shell .au-stat-icon.green,
+html:not([data-theme="dark"]) .admin-shell .ab-title-icon { background: #e9f2cf; color: #1d6b33; }
+html:not([data-theme="dark"]) .admin-shell .admin-stat-icon.green { background: linear-gradient(140deg, #3c8f28, #14602a); }
+html:not([data-theme="dark"]) .admin-shell .au-pill.active,
+html:not([data-theme="dark"]) .admin-shell .au-pill.ab-online,
+html:not([data-theme="dark"]) .admin-shell .au-pill.ab-confirmed { background: #e9f2cf; color: #14602a; }
+html:not([data-theme="dark"]) .admin-shell .au-table input[type="checkbox"] { accent-color: #1d7a2b; }
+html:not([data-theme="dark"]) .admin-shell .au-stat-icon.coral { background: #e9f2cf; color: #1d6b33; }
+html:not([data-theme="dark"]) .admin-shell .au-stat-icon.peach { background: #f4f7e3; color: #3c8f28; }
+html:not([data-theme="dark"]) .admin-shell .admin-avatar { background: linear-gradient(135deg, #3c8f28, #14602a); }
+html:not([data-theme="dark"]) .admin-shell .admin-logout { background: #e9f2cf; border-color: #b9d68c; color: #14602a; box-shadow: 0 8px 20px #3f7d2a1f; }
+html:not([data-theme="dark"]) .admin-shell .admin-logout:hover { background: #dcebb8; }

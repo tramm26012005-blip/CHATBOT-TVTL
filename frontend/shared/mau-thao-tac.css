@@ -5,6 +5,7 @@
   --action-coral-soft:#fff0e7;
   --action-coral-border:#f3b3a0;
   --action-coral-gradient:linear-gradient(100deg,#f9a07f 0%,#f27c63 45%,#e85a55 100%);
+  --action-shadow:#e85a551c;
 }
 
 /* Explicit action classes only: branding, charts and status meanings retain
@@ -15,7 +16,7 @@
   .service-plan-members,.report-full-download,
   .saved-conversations-copy button,
   .admin-sidebar nav button.active,.nav-item.active,
-  button.active,button[aria-selected="true"],button[aria-pressed="true"],
+  button.active,button[aria-selected="true"],button[aria-pressed="true"]:not(.mood-option),
   .ref-hub-tabs button[aria-pressed="true"],
   .healing-filters button.active,
   .available-slot-grid button.is-selected,
@@ -24,7 +25,7 @@
   background:var(--action-coral-gradient) !important;
   color:#fff !important;
   border-color:var(--action-coral-border) !important;
-  box-shadow:inset 0 1px 0 #ffffff40,0 5px 14px #e85a551c !important;
+  box-shadow:inset 0 1px 0 #ffffff40,0 5px 14px var(--action-shadow) !important;
 }
 :is(.admin-shell,.interior-shell) :is(
   .button.primary,.button.green-shimmer,.system-save-button,.assessment-save,
@@ -65,4 +66,14 @@ html[data-theme="dark"] {
   --action-coral-dark:#ffc2aa;
   --action-coral-soft:#48342f;
   --action-coral-border:#ad7868;
+}
+
+/* Student pages use the login screen's green in light mode; admin and expert keep coral. */
+html:not([data-theme="dark"]) .interior-shell {
+  --action-coral:#14602a;
+  --action-coral-dark:#0f5a26;
+  --action-coral-soft:#e9f2cf;
+  --action-coral-border:#b9d68c;
+  --action-coral-gradient:linear-gradient(100deg,#0f5a26 0%,#1d7a2b 55%,#78b61f 100%);
+  --action-shadow:#3f7d2a33;
 }

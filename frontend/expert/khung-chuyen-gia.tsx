@@ -23,6 +23,7 @@ import {
   UserRound,
   Users,
   Zap,
+  Info,
 } from "lucide-react";
 import { api, type User } from "@/lib/api";
 import PortalShell from "../shared/khung-giao-dien";
@@ -421,7 +422,7 @@ function StudentsSection({ bookings, showBookings }: { bookings: Booking[]; show
     })
     .sort((a, b) => (a.upcoming?.starts_at || "9").localeCompare(b.upcoming?.starts_at || "9"));
   return (
-    <div className="au">
+    <div className="au ex-students">
       <AdminBanner eyebrow="CHUYÊN GIA" title="Hồ sơ tư vấn được phân công" subtitle="Sinh viên đã đặt lịch với bạn. Chỉ gồm thông tin sinh viên đồng ý chia sẻ khi đặt lịch." motto={["Mỗi sinh viên", "một câu chuyện", "riêng"]} icon={<Users size={38} strokeWidth={1.5} aria-hidden="true" />} />
       <section className="au-card">
         <div className="au-table-scroll">
@@ -445,7 +446,7 @@ function StudentsSection({ bookings, showBookings }: { bookings: Booking[]; show
             </tbody>
           </table>
         </div>
-        <p className="au-hint ex-privacy">Bạn không xem được nội dung trò chuyện với AI hay kết quả test của sinh viên.</p>
+        <p className="au-hint ex-privacy"><Info size={16} aria-hidden="true" />Bạn không xem được nội dung trò chuyện với AI hay kết quả test của sinh viên.</p>
       </section>
     </div>
   );

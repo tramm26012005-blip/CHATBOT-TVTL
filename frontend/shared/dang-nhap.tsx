@@ -291,14 +291,17 @@ export default function AuthEntry({
         Đến biểu mẫu
       </a>
       <div className="auth-entry-art" aria-hidden="true">
-        <img src="/images/nen-tuvantamly.png" alt="" />
+        <img src="/images/hinh%20nen.jpg" alt="" />
+        {Array.from({ length: 10 }, (_, i) => (
+          <i key={i} className="auth-entry-mote" />
+        ))}
       </div>
       <div className="auth-entry-content">
         <header className="auth-entry-brand">
           <h1 className="sr-only">Tư vấn tâm lý</h1>
           <BrandWordmark
             className="is-scaled"
-            tagline="LẮNG NGHE • ĐỒNG HÀNH • CHIA SẺ"
+            tagline="LẮNG NGHE · ĐỒNG HÀNH · CHIA SẺ"
           />
         </header>
         <main
@@ -314,9 +317,7 @@ export default function AuthEntry({
                   : "Quên mật khẩu"
               : reset
                 ? "Đặt mật khẩu mới"
-                : register
-                  ? "Đăng ký để trò chuyện"
-                  : "Đăng nhập để trò chuyện"}
+                : <>{register ? "Đăng ký" : "Đăng nhập"} để <TitleMark /></>}
           </h2>
           <p className="auth-entry-description">
             {forgot ? (
@@ -333,7 +334,7 @@ export default function AuthEntry({
                 <button type="button" onClick={onSupport}>
                   Cần hỗ trợ ngay
                 </button>{" "}
-                ở góc phải màn hình — luôn có người đồng hành và lắng nghe cùng
+                ở góc phải màn hình – luôn có người đồng hành và lắng nghe cùng
                 bạn.
               </>
             )}
@@ -667,5 +668,19 @@ export default function AuthEntry({
         <span>Cần hỗ trợ ngay</span>
       </button>
     </div>
+  );
+}
+
+/* "trò chuyện" with the hand-drawn underline that ends in a heart. */
+function TitleMark() {
+  return (
+    <span className="auth-entry-title-mark">
+      trò chuyện
+      <svg viewBox="0 0 300 60" aria-hidden="true">
+        <path pathLength={1} d="M2 52 C70 58 170 56 252 40" />
+        <path pathLength={1} d="M252 40 C226 26 222 8 238 6 C247 5 252 11 254 16 C258 7 268 3 276 8 C286 16 274 32 252 40 Z" />
+        <path pathLength={1} d="M276 28 C284 30 290 27 298 20" />
+      </svg>
+    </span>
   );
 }

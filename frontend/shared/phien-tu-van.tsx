@@ -1,7 +1,9 @@
 "use client";
 
 import {useEffect, useState, type FormEvent} from "react";
+import {Wallet as WalletIcon} from "lucide-react";
 import {api,ApiError} from "@/lib/api";
+import {AdminBanner} from "./thanh-phan-chung";
 import "./phien-tu-van.css";
 
 export type Consultation = {
@@ -82,5 +84,5 @@ export type Wallet = {earned:number; paid:number; balance:number; held:number; p
 export function ExpertWallet() {
   const [data,setData]=useState<Wallet|null>(null),[error,setError]=useState(""),[attempt,setAttempt]=useState(0);
   useEffect(()=>{let alive=true;const load=()=>api<Wallet>("/expert/wallet").then(d=>{if(alive){setData(d);setError("");}}).catch(e=>{if(alive)setError(e instanceof ApiError&&e.status===404&&e.message==="Not Found"?"Backend đang chạy chưa cập nhật chức năng số dư. Khởi động lại backend rồi bấm Thử lại.":e.message);});load();const id=setInterval(load,15000);return()=>{alive=false;clearInterval(id);};},[attempt]);
-  return <section className="consultation-panel"><h2>Số dư chuyên gia · mô phỏng</h2>{error&&<div role="alert"><p>{error}</p><button className="button outline" onClick={()=>{setError("");setAttempt(n=>n+1);}}>Thử lại</button></div>}{!data&&!error&&<p role="status">Đang tải số dư…</p>}{data&&<><div className="consultation-balances"><p>Số dư hiện tại<strong>{money(data.balance)}</strong></p><p>Thu nhập sau phí 20%<strong>{money(data.earned)}</strong></p><p>Đã chi trả theo tháng<strong>{money(data.paid)}</strong></p><p>Tiền buổi còn được giữ<strong>{money(data.held)}</strong></p></div><p>Được cộng 80% khi xác nhận đã tư vấn sau ít nhất 5 phút, hoặc khi sinh viên vắng quá 15 phút và bạn đã điểm danh đúng hạn. Khoản hoàn tiền có thể làm số dư âm và được trừ vào kỳ tiếp theo.</p><h3>Lịch sử chi trả mô phỏng</h3>{data.payouts.map(p=><p key={p.id}>{p.month} · {money(p.amount)}</p>)}{!data.payouts.length&&<p>Chưa có kỳ chi trả.</p>}</>}</section>;
+  return <><AdminBanner eyebrow="CHUYÊN GIA" title="Số dư và thu nhập" subtitle="Theo dõi số dư, thu nhập và các kỳ chi trả của bạn." motto={["“Minh bạch","Rõ ràng","Công bằng”"]} icon={<WalletIcon size={36} strokeWidth={1.4} aria-hidden="true" />} /><section className="consultation-panel"><h2>Số dư chuyên gia · mô phỏng</h2>{error&&<div role="alert"><p>{error}</p><button className="button outline" onClick={()=>{setError("");setAttempt(n=>n+1);}}>Thử lại</button></div>}{!data&&!error&&<p role="status">Đang tải số dư…</p>}{data&&<><div className="consultation-balances"><p>Số dư hiện tại<strong>{money(data.balance)}</strong></p><p>Thu nhập sau phí 20%<strong>{money(data.earned)}</strong></p><p>Đã chi trả theo tháng<strong>{money(data.paid)}</strong></p><p>Tiền buổi còn được giữ<strong>{money(data.held)}</strong></p></div><p>Được cộng 80% khi xác nhận đã tư vấn sau ít nhất 5 phút, hoặc khi sinh viên vắng quá 15 phút và bạn đã điểm danh đúng hạn. Khoản hoàn tiền có thể làm số dư âm và được trừ vào kỳ tiếp theo.</p><h3>Lịch sử chi trả mô phỏng</h3>{data.payouts.map(p=><p key={p.id}>{p.month} · {money(p.amount)}</p>)}{!data.payouts.length&&<p>Chưa có kỳ chi trả.</p>}</>}</section></>;
 }

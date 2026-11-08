@@ -11,17 +11,114 @@
   background: #29372f7d;
 }
 .sd-dialog {
+  --sd-bg: #fbf8f2;
+  --sd-border: #e3d8cd;
+  --sd-surface: #fffdfb;
+  --sd-heading: #205755;
+  --sd-wave-a: #fbe9df;
+  --sd-wave-b: #f9e2d6;
+  --sd-wave-c: #f5d6c8;
+  --sd-tint: #fcebe1;
+  --sd-tint-text: #8a4a3a;
+  --sd-soft: #fff6ed;
+  --sd-hover-border: #d8c8b8;
+  --sd-icon-bg: #fbe4d8;
+  --sd-accent: #b4614a;
+  --sd-focus: #7c9a8c;
+  --sd-number: linear-gradient(125deg, #89b4a2 0%, #508b7d 30%, #28685f 64%, #164d48 100%);
   position: relative;
   width: min(760px, 100%);
   max-height: calc(100svh - 48px);
   overflow: auto;
   padding: 40px 32px 56px;
   border-radius: 24px;
-  border: 1px solid #e3d8cd;
-  background: #fbf8f2;
+  border: 1px solid var(--sd-border);
+  background: var(--sd-bg);
   box-shadow: 0 24px 90px #17231c24;
   color: #27383a;
   font-family: "Be Vietnam Pro", Arial, sans-serif;
+}
+/* The login and student pages share one green and cream palette.
+   The number gradient stops short of lime so white digits stay easy to read. */
+html:has(.auth-entry) .sd-dialog,
+html:not([data-theme="dark"]):has(.interior-shell) .sd-dialog {
+  --sd-bg: #fbf5e6;
+  --sd-border: #ded9c0;
+  --sd-surface: #fffdf6;
+  --sd-heading: #14602a;
+  --sd-wave-a: #e9f2cf;
+  --sd-wave-b: #dcebb8;
+  --sd-wave-c: #cde2a0;
+  --sd-tint: #e9f2cf;
+  --sd-tint-text: #14602a;
+  --sd-soft: #f4f7e3;
+  --sd-hover-border: #b9d68c;
+  --sd-icon-bg: #e0eeb7;
+  --sd-accent: #2c7a2c;
+  --sd-focus: #4f9a33;
+  --sd-number: linear-gradient(100deg, #0f5a26 0%, #1d7a2b 70%, #3c8f28 100%);
+}
+/* A more compact layout on the sign-in pages. */
+html:has(.auth-entry) .sd-dialog {
+  width: min(640px, 100%);
+  padding: 26px 26px 32px;
+}
+html:has(.auth-entry) .sd-close {
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+}
+html:has(.auth-entry) .sd-dialog h2 {
+  margin: 2px 48px 8px 0;
+  font-size: 21px;
+}
+html:has(.auth-entry) .sd-dialog > p:not(.sd-note) {
+  margin-bottom: 14px;
+  font-size: 15px;
+}
+html:has(.auth-entry) .sd-contacts {
+  gap: 9px;
+}
+html:has(.auth-entry) .sd-contact {
+  gap: 14px;
+  padding: 9px 16px 9px 12px;
+  border-radius: 15px;
+}
+html:has(.auth-entry) .sd-icon {
+  width: 44px;
+  height: 44px;
+}
+html:has(.auth-entry) .sd-icon svg {
+  width: 23px;
+  height: 23px;
+}
+html:has(.auth-entry) .sd-name {
+  font-size: 14.5px;
+}
+html:has(.auth-entry) .sd-number {
+  padding: 1px 12px;
+}
+html:has(.auth-entry) .sd-about {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+html:has(.auth-entry) .sd-about small {
+  margin-top: 4px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+}
+html:has(.auth-entry) .sd-note {
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 13px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+html:has(.auth-entry) .sd-note svg {
+  width: 18px;
+  height: 18px;
 }
 .sd-waves {
   position: absolute;
@@ -30,9 +127,9 @@
   height: 100%;
   pointer-events: none;
 }
-.sd-waves .a { fill: #fbe9df; opacity: 0.9; }
-.sd-waves .b { fill: #f9e2d6; opacity: 0.85; }
-.sd-waves .c { fill: #f5d6c8; opacity: 0.8; }
+.sd-waves .a { fill: var(--sd-wave-a); opacity: 0.9; }
+.sd-waves .b { fill: var(--sd-wave-b); opacity: 0.85; }
+.sd-waves .c { fill: var(--sd-wave-c); opacity: 0.8; }
 .sd-dialog > :not(.sd-waves) {
   position: relative;
 }
@@ -44,21 +141,21 @@
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 1px solid #e3d8cd;
+  border: 1px solid var(--sd-border);
   border-radius: 12px;
-  background: #fffdfb;
-  color: #205755;
+  background: var(--sd-surface);
+  color: var(--sd-heading);
   cursor: pointer;
 }
 .sd-close:hover {
-  background: #fcebe1;
+  background: var(--sd-tint);
 }
 /* Focus lands here on open; keep the ring subtle for mouse users. */
 .sd-close:focus:not(:focus-visible) {
   outline: none;
 }
 .sd-close:focus-visible {
-  outline: 2px solid #7c9a8c;
+  outline: 2px solid var(--sd-focus);
   outline-offset: 2px;
 }
 .sd-dialog h2 {
@@ -66,7 +163,7 @@
   font-size: 26px;
   font-weight: 700;
   line-height: 1.35;
-  color: #205755;
+  color: var(--sd-heading);
 }
 .sd-dialog > p:not(.sd-note) {
   margin: 0 0 20px;
@@ -85,20 +182,20 @@
   align-items: center;
   gap: 18px;
   padding: 14px 20px 14px 16px;
-  border: 1px solid #e3d8cd;
+  border: 1px solid var(--sd-border);
   border-radius: 18px;
-  background: #fffdfb;
+  background: var(--sd-surface);
   box-shadow: 0 4px 14px #8d746308;
   color: inherit;
   text-decoration: none;
   transition: background 0.15s, border-color 0.15s;
 }
 .sd-contact:hover {
-  background: #fff6ed;
-  border-color: #d8c8b8;
+  background: var(--sd-soft);
+  border-color: var(--sd-hover-border);
 }
 .sd-contact:focus-visible {
-  outline: 3px solid #7c9a8c;
+  outline: 3px solid var(--sd-focus);
   outline-offset: 3px;
 }
 .sd-icon {
@@ -107,8 +204,8 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: #fbe4d8;
-  color: #b4614a;
+  background: var(--sd-icon-bg);
+  color: var(--sd-accent);
 }
 .sd-name {
   font-size: 17px;
@@ -123,8 +220,7 @@
   display: inline-block;
   padding: 2px 14px;
   border-radius: 999px;
-  /* Same green gradient as the "Quản lý gói" button. */
-  background: linear-gradient(125deg, #89b4a2 0%, #508b7d 30%, #28685f 64%, #164d48 100%);
+  background: var(--sd-number);
   box-shadow: inset 0 0 0 2px #c3e4d51a, 0 2px 6px #285e4d14;
   color: #fff;
   font-weight: 700;
@@ -133,7 +229,7 @@
 }
 .sd-about {
   padding-left: 18px;
-  border-left: 1.5px solid #e3d8cd;
+  border-left: 1.5px solid var(--sd-border);
   font-size: 14px;
   line-height: 1.6;
   color: #737f79;
@@ -145,13 +241,13 @@
   margin-top: 6px;
   padding: 4px 10px;
   border-radius: 10px;
-  background: #fcebe1;
+  background: var(--sd-tint);
   font-size: 12.5px;
-  color: #8a4a3a;
+  color: var(--sd-tint-text);
 }
 .sd-about small svg {
   flex: none;
-  color: #b4614a;
+  color: var(--sd-accent);
 }
 .sd-note {
   display: flex;
@@ -159,9 +255,9 @@
   gap: 12px;
   margin: 18px 0 0;
   padding: 14px 18px;
-  border: 1px solid #e3d8cd;
+  border: 1px solid var(--sd-border);
   border-radius: 16px;
-  background: #fff6ed;
+  background: var(--sd-soft);
   font-size: 13px;
   line-height: 1.7;
   color: #737f79;
@@ -169,7 +265,7 @@
 .sd-note svg {
   flex: none;
   margin-top: 2px;
-  color: #b4614a;
+  color: var(--sd-accent);
 }
 
 html[data-theme="dark"] .sd-dialog {

@@ -47,7 +47,7 @@
 .ex-today h2 svg,
 .ex-quick h2 svg,
 .ex-notices h2 svg {
-  color: #2f6553;
+  color: #14602a;
 }
 .ex-today h2 small {
   padding: 1px 9px;
@@ -63,7 +63,7 @@
   gap: 6px;
   border: 0;
   background: none;
-  color: #2f6553;
+  color: #14602a;
   font: inherit;
   font-size: 14px;
   font-weight: 500;
@@ -91,8 +91,8 @@
   justify-self: start;
   padding: 8px 14px;
   border-radius: 10px;
-  background: #e8f1ec;
-  color: #1f3d33;
+  background: #e9f2cf;
+  color: #14602a;
   font-size: 14.5px;
   font-weight: 500;
   line-height: 1.3;
@@ -142,7 +142,7 @@ html[data-theme="dark"] .ex-time {
   gap: 8px;
   min-height: 44px;
   border-radius: 12px !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
 }
 .ex-confirm-actions {
   display: flex;
@@ -173,7 +173,7 @@ html[data-theme="dark"] .ex-time {
   min-height: 44px;
   padding: 0 16px;
   border-radius: 12px !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -181,7 +181,7 @@ html[data-theme="dark"] .ex-time {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #2f6553;
+  color: #14602a;
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
@@ -219,14 +219,14 @@ html[data-theme="dark"] .ex-time {
 .ex-quick button:hover {
   filter: brightness(0.97);
 }
-.ex-quick .green { background: #e6efe9; }
-.ex-quick .green svg { color: #2f6553; }
-.ex-quick .coral { background: #fde3dc; }
-.ex-quick .coral svg { color: #d9473a; }
-.ex-quick .peach { background: #fdebd6; }
-.ex-quick .peach svg { color: #d98a1f; }
-.ex-quick .mint { background: #e3f1ec; }
-.ex-quick .mint svg { color: #2f7a65; }
+.ex-quick .green { background: #e9f2cf; }
+.ex-quick .green svg { color: #14602a; }
+.ex-quick .coral { background: #f4f7e3; }
+.ex-quick .coral svg { color: #14602a; }
+.ex-quick .peach { background: #e0eeb7; }
+.ex-quick .peach svg { color: #14602a; }
+.ex-quick .mint { background: #e9f2cf; }
+.ex-quick .mint svg { color: #14602a; }
 html[data-theme="dark"] .ex-quick button { background: var(--a-soft); }
 .ex-quick button i {
   position: absolute;
@@ -276,8 +276,8 @@ html[data-theme="dark"] .ex-quick button { background: var(--a-soft); }
   border-radius: 10px;
   flex: none;
 }
-.ex-notice-icon.coral { background: #fde3dc; color: #d9473a; }
-.ex-notice-icon.green { background: #e3f1e8; color: #2f7a55; }
+.ex-notice-icon.coral { background: #e9f2cf; color: #14602a; }
+.ex-notice-icon.green { background: #e9f2cf; color: #14602a; }
 .ex-notice-icon.violet { background: #efe6f7; color: #7a52b3; }
 
 /* Tables and filters */
@@ -296,7 +296,7 @@ html[data-theme="dark"] .ex-quick button { background: var(--a-soft); }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #2f6553;
+  color: #14602a;
   font-size: 13px;
 }
 .ex-privacy {
@@ -464,3 +464,108 @@ html[data-theme="dark"] .ex-quick button { background: var(--a-soft); }
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* "Assigned students" page: livelier banner and a centred, clearer table. Light theme only. */
+.admin-shell:has(.ex-students) .admin-profile { padding-left: 16px; border-left: 1px solid var(--a-line); }
+.admin-shell:has(.ex-students) .admin-profile-text strong { font-weight: 700; }
+html:not([data-theme="dark"]) .admin-shell:has(.ex-students) .admin-main {
+  background:
+    radial-gradient(60% 26% at 28% 103%, #e3edc6b3, transparent),
+    radial-gradient(55% 22% at 88% 102%, #e3edc6b3, transparent),
+    var(--a-bg);
+}
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner {
+  background: linear-gradient(100deg, #fcf8ea 0%, #eff5d9 55%, #d8e9ab 100%);
+  border-color: #dfe6c4;
+  box-shadow: 0 6px 18px #4a6b2a14;
+}
+/* A low hill on the left, echoing the wave on the right. */
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  bottom: -52px;
+  width: 44%;
+  height: 86px;
+  border-radius: 50%;
+  background: #dcebb88c;
+  pointer-events: none;
+}
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-copy > span {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: #e0eeb7;
+  color: #14602a;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-copy h1 { margin-top: 6px; font-weight: 800; color: #14602a; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-copy h1 svg { color: #e58a3c; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-copy p { color: #2b3a30; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-motto { border-left-color: #b9c79a88; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-motto p { font-size: 15px; line-height: 23px; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-motto em { color: #27383a; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-motto > svg:not(:last-child) { width: 32px; height: 32px; color: #e58a3c; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ae-banner-motto > svg:last-child { width: 150px; margin-left: 48px; stroke: #e58a3c; }
+
+html:not([data-theme="dark"]) .admin-shell .ex-students .au-card {
+  border-color: #e6ead0;
+  background: linear-gradient(#fffef9, #fffdf6);
+  box-shadow: 0 10px 26px #4a6b2a14;
+}
+html:not([data-theme="dark"]) .admin-shell .ex-students .au-table th { background: #e8efd6; color: #27383a; font-size: 12.5px; font-weight: 700; }
+.ex-students .au-table th,
+.ex-students .au-table td { text-align: center; }
+.ex-students .au-table th:nth-child(2),
+.ex-students .au-table td:nth-child(2) { text-align: left; }
+.ex-students .au-table td { font-size: 13px; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .au-person strong { color: #14602a; font-weight: 700; }
+.ex-students .ab-dash { font-style: italic; }
+.ex-students .ex-phone { justify-content: center; gap: 9px; font-weight: 700; }
+.ex-students .ex-phone svg { width: 18px; height: 18px; }
+html:not([data-theme="dark"]) .admin-shell .ex-students .ex-detail {
+  min-height: 40px;
+  border-radius: 13px !important;
+  background: linear-gradient(#fbfdf2, #e9f2d0) !important;
+  box-shadow: 0 3px 8px #3f7d2a2e;
+  color: #14602a !important;
+  font-weight: 700;
+}
+html:not([data-theme="dark"]) .admin-shell .ex-students .ex-detail:hover { background: #e0eeb7 !important; }
+.ex-students .ex-privacy { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: #2b3a30; }
+.ex-students .ex-privacy svg { flex: none; color: #3c8f28; }
+
+/* Expert portal typography: about 12-15% smaller than the shared defaults, every section alike. */
+.admin-shell:not(.admin-reference) { --content-font: 13px; }
+.admin-shell:not(.admin-reference) .admin-sidebar nav button,
+.admin-shell:not(.admin-reference) .admin-logout { font-size: 14px; }
+.admin-shell:not(.admin-reference) .admin-avatar { font-size: 17px; }
+.admin-shell:not(.admin-reference) .admin-profile-text strong { font-size: 14px; }
+.admin-shell:not(.admin-reference) .admin-profile-text small { font-size: 11px; }
+.admin-shell:not(.admin-reference) .ae-banner-copy > span { font-size: 11px; }
+.admin-shell:not(.admin-reference) .ae-banner-copy p { font-size: 13px; line-height: 20px; }
+.admin-shell:not(.admin-reference) .ae-banner-motto p { font-size: 14px; line-height: 22px; }
+@media (min-width: 761px) {
+  .admin-shell:not(.admin-reference) .ae-banner-copy h1 { font-size: 28px; line-height: 36px; }
+  .admin-shell:not(.admin-reference) .au-card > h2,
+  .admin-shell:not(.admin-reference) .au-card > header > h2,
+  .admin-shell:not(.admin-reference) .weekly-day h2,
+  .admin-shell:not(.admin-reference) .consultation-panel h2 { font-size: 16.5px; }
+  .admin-shell:not(.admin-reference) .au-stats strong { font-size: 26px; }
+}
+.admin-shell:not(.admin-reference) .au-stats h3,
+.admin-shell:not(.admin-reference) .ex-quick button,
+.admin-shell:not(.admin-reference) .ex-link,
+.admin-shell:not(.admin-reference) .ex-empty,
+.admin-shell:not(.admin-reference) .au-details :is(dt, dd),
+.admin-shell:not(.admin-reference) .au-foot label,
+.admin-shell:not(.admin-reference) .au-table th { font-size: 12.5px; }
+.admin-shell:not(.admin-reference) .au-table td,
+.admin-shell:not(.admin-reference) .weekly-availability,
+.admin-shell:not(.admin-reference) .consultation-panel { font-size: 13px; }
+.admin-shell:not(.admin-reference) .consultation-panel h3 { font-size: 14px; }
+.admin-shell:not(.admin-reference) .au-stats small,
+.admin-shell:not(.admin-reference) .au-change { font-size: 11px; }
+/* Money totals stay the most prominent figures on the balance page. */
+.admin-shell:not(.admin-reference) .consultation-balances { --content-font: 16px; }

@@ -1,4 +1,4 @@
-.service-plan-management {--plan-ink:#1e292c;--plan-green:#075d45;--plan-coral:#ff7152;padding:4px 6px 20px;color:var(--plan-ink);}
+.service-plan-management {--plan-ink:#1e292c;--plan-green:#14602a;--plan-coral:#ff7152;padding:4px 6px 20px;color:var(--plan-ink);}
 .service-plan-heading h1 {position:relative;display:table;margin:0 0 16px;padding-bottom:9px;font:600 clamp(27px,2.3vw,36px)/1.2 "Playfair Display",Georgia,serif;letter-spacing:-.035em;color:var(--plan-ink);}
 .service-plan-heading h1 svg {position:absolute;left:1%;bottom:-3px;width:99%;height:13px;overflow:visible;}
 .service-plan-heading h1 path {fill:none;stroke:#ff795b;stroke-width:4;stroke-linecap:round;}
@@ -6,27 +6,27 @@
 .service-plan-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;}
 .service-plan-grid {max-width:1180px;gap:18px;}
 .service-plan-card {position:relative;isolation:isolate;display:flex;align-items:flex-start;flex-direction:column;min-width:0;overflow:hidden;border:1.5px solid #c6dcb3;border-radius:22px;padding:20px 24px 22px;background:linear-gradient(125deg,#f9fbf1aa,var(--a-surface));box-shadow:0 12px 25px #ab8b4f0a;}
-.service-plan-card.is-vip {border-color:#ffbfa8;background:linear-gradient(125deg,#fff7f1,var(--a-surface));}
+.service-plan-card.is-vip {border-color:#e9f2cf;background:linear-gradient(125deg,#f4f7e3,var(--a-surface));}
 .service-plan-card h2 {min-width:145px;display:inline-block;text-align:center;padding:8px 20px;margin:0 0 10px;border-radius:50px;background:linear-gradient(110deg,#dceabc,#d1e4b6);color:var(--plan-green);font-size:clamp(18px,1.35vw,21px);font-weight:700;line-height:1.3;}
 .service-plan-card.is-vip h2 {min-width:105px;color:white;background:linear-gradient(110deg,#ff926d,#ff7253);box-shadow:inset 0 0 0 1px #ffffff6b;}
 .service-plan-price {display:block;margin:0 0 6px;font-size:clamp(30px,2.6vw,40px);line-height:1.2;letter-spacing:-.025em;color:var(--plan-green);font-weight:800;}
 .service-plan-duration {display:inline-block;padding:4px 20px;border-radius:30px;background:#e8efd9;color:#254449;font-size:clamp(13px,1.1vw,16px);line-height:1.4;}
-.service-plan-card.is-vip .service-plan-duration {background:#ffe5d4;}
+.service-plan-card.is-vip .service-plan-duration {background:#e9f2cf;}
 .service-plan-card ul {list-style:none;display:grid;gap:10px;padding:0;margin:18px 0 25px;font-size:clamp(12px,1.05vw,15px);line-height:1.6;}
 .service-plan-card li {position:relative;padding-left:26px;}
 .service-plan-card li::before {content:"";position:absolute;left:7px;top:.62em;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#82bd65,#4c9c43);}
-.service-plan-card.is-vip li::before {background:linear-gradient(135deg,#ffa782,#ff7150);}
-.service-plan-members {display:inline-flex;align-items:center;justify-content:center;gap:20px;min-height:44px;padding:10px 25px;margin-top:auto;border:0;border-radius:40px;background:linear-gradient(115deg,#1a6950,#07573e);color:white;font:700 clamp(14px,1.2vw,18px)/1.4 "Be Vietnam Pro",Arial,sans-serif;cursor:pointer;box-shadow:0 5px 12px #1c674515;}
+.service-plan-card.is-vip li::before {background:linear-gradient(135deg,#78b61f,#1d7a2b);}
+.service-plan-members {display:inline-flex;align-items:center;justify-content:center;gap:20px;min-height:44px;padding:10px 25px;margin-top:auto;border:0;border-radius:40px;background:linear-gradient(115deg,#14602a,#14602a);color:white;font:700 clamp(14px,1.2vw,18px)/1.4 "Be Vietnam Pro",Arial,sans-serif;cursor:pointer;box-shadow:0 5px 12px #14602a15;}
 .is-vip .service-plan-members {background:linear-gradient(110deg,#ff644b,#fa513b);box-shadow:0 5px 12px #ff78521a;}
 .service-plan-members:hover {filter:brightness(1.06);}
 .service-plan-waves {position:absolute;z-index:-1;pointer-events:none;bottom:0;right:0;width:52%;height:90px;}
 .service-plan-waves path:first-child {fill:#dce7b6;opacity:.32;}
 .service-plan-waves path:last-child {fill:#d4e4a3;opacity:.33;}
-.is-vip .service-plan-waves path:first-child {fill:#ffcfa8;opacity:.4;}
-.is-vip .service-plan-waves path:last-child {fill:#ffd9b6;opacity:.42;}
+.is-vip .service-plan-waves path:first-child {fill:#e9f2cf;opacity:.4;}
+.is-vip .service-plan-waves path:last-child {fill:#e9f2cf;opacity:.42;}
 .service-plan-settings {display:inline-block;margin:20px 0 0;padding:10px 27px;border:1.5px solid #b3d09b;border-radius:40px;background:#f7f7ec9c;color:var(--plan-green);font:600 clamp(13px,1.15vw,17px)/1.4 "Be Vietnam Pro",Arial,sans-serif;cursor:pointer;}
 .service-plan-settings:hover {background:#eaf0db;}
-.service-plan-management button:focus-visible {outline:3px solid #7daa94;outline-offset:4px;}
+.service-plan-management button:focus-visible {outline:3px solid #3c8f28;outline-offset:4px;}
 html[data-theme="dark"] .service-plan-management {--plan-ink:var(--a-text);--plan-green:#b5dec6;}
 html[data-theme="dark"] .service-plan-heading p {color:var(--a-muted);}
 html[data-theme="dark"] .service-plan-card,html[data-theme="dark"] .service-plan-card.is-vip {background:var(--a-surface);border-color:#667c5a;}
