@@ -1,0 +1,15 @@
+.live-payment { position:relative; width:min(94vw,560px); max-height:90dvh; overflow:auto; padding:30px; }
+.live-payment h2 { padding-right:28px; }
+.live-payment-close { position:absolute; right:14px; top:14px; }
+.live-payment-price { font-size:28px; font-weight:700; color:var(--green-dark); margin:14px 0; }
+.live-payment-price small { font-size:14px; font-weight:400; }
+.live-payment p, .live-payment small { line-height:1.7; }
+.live-payment-methods { margin:20px 0; }
+.live-payment-methods button { flex-wrap:wrap; }
+.live-payment-methods small { width:100%; font-size:11px; }
+.live-payment-summary { background:var(--soft); padding:14px; border-radius:12px; margin:18px 0; }
+.live-payment-summary div { display:grid; grid-template-columns:110px minmax(0,1fr); gap:12px; margin:6px 0; }
+.live-payment-summary dd { margin:0; overflow-wrap:anywhere; }
+.live-payment .full { margin:10px 0; }
+.live-payment-status { display:flex; gap:8px; align-items:center; font-weight:600; }
+.live-payment-status.paid { color:var(--green-dark); }

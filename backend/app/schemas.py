@@ -52,6 +52,7 @@ class Message(BaseModel):
 
 
 class Chat(BaseModel):
+    voice_mode: bool = False
     messages: list[Message] = Field(min_length=1, max_length=24)
     conversation_id: str | None = None
     save: bool = False

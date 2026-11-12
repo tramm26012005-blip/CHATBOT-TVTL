@@ -14,6 +14,8 @@ os.environ['DATABASE_URL'] = 'sqlite:///' + str(Path(test_directory.name) / 'tes
 os.environ['DATA_ENCRYPTION_KEY'] = Fernet.generate_key().decode()
 os.environ['APP_ORIGIN'] = 'http://localhost:3000'
 os.environ['ALLOW_DRAFT_ASSESSMENT'] = 'false'
+# Existing provider mocks exercise OpenAI; Gemini tests select it explicitly.
+os.environ['AI_PROVIDER'] = 'openai'
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fastapi.testclient import TestClient
@@ -25,9 +27,268 @@ from app.security import encrypt, decrypt
 from app import ai, registration, recovery
 
 send_otp_email_real = registration.send_otp_email
-otp_deliveries = {}
+otp_deliveries: dict[str, str] = {}
 
 HEADERS = {'Origin': 'http://localhost:3000', 'X-Tuvantamly-Client': 'web'}
+
+
+@pytest.fixture
+def payment_setup(client, monkeypatch):
+    from app import payment_gateways as gateway
+    c = settings()
+    for key, value in {'payments_enabled': True, 'app_origin': 'https://chat.example',
+            'payment_public_origin': 'https://chat.example', 'payos_client_id': 'test-client',
+            'payos_api_key': 'test-api', 'payos_checksum_key': 'test-checksum',
+            'mb_account_number': '12345678', 'momo_partner_code': 'MERCHANT',
+            'momo_access_key': 'test-access', 'momo_secret_key': 'test-secret'}.items():
+        monkeypatch.setattr(c, key, value)
+    client.headers['Origin'] = 'https://chat.example'
+    calls = []
+
+    def provider(method, url, **kwargs):
+        payload = kwargs.get('json', {})
+        calls.append((method, url, payload))
+        if url == gateway.PAYOS:
+            signed = {key: payload[key] for key in ('amount', 'cancelUrl', 'description', 'orderCode', 'returnUrl')}
+            assert payload['signature'] == gateway.signature(signed, c.payos_checksum_key)
+            assert kwargs['headers'] == {'x-client-id': c.payos_client_id, 'x-api-key': c.payos_api_key}
+            data = {'bin': '970422', 'accountNumber': c.mb_account_number, 'accountName': 'TEST OWNER',
+                    'amount': payload['amount'], 'description': payload['description'], 'orderCode': payload['orderCode'],
+                    'currency': 'VND', 'paymentLinkId': 'link-' + str(payload['orderCode']), 'status': 'PENDING',
+                    'checkoutUrl': 'https://pay.payos.vn/web/link-' + str(payload['orderCode'])}
+            return {'code': '00', 'data': data, 'signature': gateway.signature(data, c.payos_checksum_key)}
+        if url == gateway.MOMO + '/create':
+            signed = {key: value for key, value in payload.items() if key not in ('signature', 'autoCapture', 'lang')}
+            assert payload['signature'] == gateway.signature({'accessKey': c.momo_access_key, **signed}, c.momo_secret_key)
+            assert payload['autoCapture'] is True
+            return {'resultCode': 0, 'partnerCode': c.momo_partner_code, 'requestId': payload['requestId'],
+                    'orderId': payload['orderId'], 'amount': payload['amount'], 'payUrl': 'https://payment.momo.vn/v2/gateway/pay?t=test'}
+        raise AssertionError('Unexpected external request: ' + url)
+    monkeypatch.setattr(gateway, 'request_json', provider)
+    return calls, provider
+
+
+def real_checkout(client, method='bank'):
+    response = client.post('/api/payments/orders', json={'method': method, 'consent': True})
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def payment_callback(client, order_id, **changes):
+    from app import payment_gateways as gateway
+    from app.db import PaymentOrder
+    with SessionLocal() as db:
+        order = db.get(PaymentOrder, order_id)
+        if order.method == 'bank':
+            data = {'orderCode': order.order_code, 'amount': order.amount, 'description': 'VIP',
+                    'accountNumber': settings().mb_account_number, 'reference': 'bank-reference', 'currency': 'VND',
+                    'paymentLinkId': order.provider_id, 'code': '00', **changes}
+            payload = {'success': True, 'code': '00', 'data': data, 'signature': gateway.signature(data, settings().payos_checksum_key)}
+            path = '/api/payments/payos/webhook'
+        else:
+            data = {'partnerCode': settings().momo_partner_code, 'orderId': order.id, 'requestId': order.id,
+                    'orderInfo': 'Goi VIP Lac Lac 30 ngay', 'orderType': 'momo_wallet', 'amount': order.amount,
+                    'transId': 1234567, 'resultCode': 0, 'responseTime': 1700000000000, 'message': 'Success',
+                    'payType': 'qr', 'extraData': '', **changes}
+            payload = {**data, 'signature': gateway.momo_ipn_signature(data)}
+            path = '/api/payments/momo/ipn'
+    # No session, browser Origin, or web-client header is supplied by providers.
+    return TestClient(app).post(path, json=payload)
+
+
+@pytest.mark.parametrize('method', ['bank', 'momo'])
+def test_real_payment_callback_grants_once_and_isolates_admin_totals(client, payment_setup, method):
+    user = register(client)
+    order = real_checkout(client, method)
+    assert order['amount'] == 300000 and order['duration_days'] == 30
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+    assert real_checkout(client, method)['id'] == order['id']
+    assert len(payment_setup[0]) == 1
+    callback = payment_callback(client, order['id'])
+    assert callback.status_code == (200 if method == 'bank' else 204), callback.text
+    with SessionLocal() as db:
+        account = db.get(User, user['id'])
+        assert account.membership_tier == 'vip' and account.membership_demo is False
+        expires = account.vip_expires_at
+        assert timedelta(days=29, hours=23) < expires.replace(tzinfo=now().tzinfo) - now() < timedelta(days=30, minutes=1)
+    assert payment_callback(client, order['id']).status_code in (200, 204)
+    with SessionLocal() as db:
+        assert db.get(User, user['id']).vip_expires_at == expires
+    set_admin(user['id'])
+    rows = client.get('/api/admin/payments').json()
+    assert rows[0]['status'] == 'paid' and rows[0]['demo'] is False
+    finance = client.get('/api/admin/reports').json()['finance']
+    assert finance['real_total'] == 300000 and finance['total'] == 0
+    assert sum(month['vip'] for month in finance['months']) == 0
+    assert client.patch('/api/admin/payments/real:' + order['id'], json={'status': 'refunded'}).status_code == 409
+
+
+@pytest.mark.parametrize('method', ['bank', 'momo'])
+def test_real_payment_bad_amount_and_partner_never_grant(client, payment_setup, method):
+    register(client)
+    order = real_checkout(client, method)
+    assert payment_callback(client, order['id'], amount=1).status_code == 400
+    wrong = {'accountNumber': 'wrong'} if method == 'bank' else {'partnerCode': 'OTHER'}
+    assert payment_callback(client, order['id'], **wrong).status_code == 400
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+
+
+def test_payment_callbacks_require_signatures_and_csrf_exemption_is_exact(client, payment_setup):
+    register(client)
+    for path in ['/api/payments/payos/webhook', '/api/payments/momo/ipn']:
+        response = TestClient(app).post(path, json={'data': {}, 'signature': 'forged'})
+        assert response.status_code == 400
+    assert TestClient(app).post('/api/payments/orders', json={'method': 'bank', 'consent': True}).status_code == 403
+    assert TestClient(app).post('/api/payments/payos/webhook/other', json={}).status_code == 403
+    assert TestClient(app).post('/api/payments/payos/webhook', content='x' * 32769).status_code == 413
+
+
+def test_live_checkout_requires_consent_server_price_and_owned_order(client, payment_setup):
+    first = register(client)
+    assert client.post('/api/payments/orders', json={'method': 'bank', 'consent': False}).status_code == 422
+    assert client.post('/api/payments/orders', json={'method': 'bank', 'consent': True, 'amount': 1}).status_code == 422
+    order = real_checkout(client)
+    assert client.get('/plans?payment_order=' + order['id'] + '&status=PAID').status_code == 404
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+    register(client, 'other@gmail.com')
+    assert client.get('/api/payments/orders/' + order['id']).status_code == 404
+    assert client.post('/api/payments/orders/' + order['id'] + '/refresh').status_code == 404
+    assert first['id']
+
+
+def test_payment_configuration_and_demo_cannot_bypass_live_mode(client, payment_setup, monkeypatch):
+    from app import payment_gateways as gateway
+    register(client)
+    cfg = settings()
+    monkeypatch.setattr(cfg, 'membership_demo_enabled', True)
+    assert client.post('/api/membership/demo-upgrade', json={'method': 'bank', 'acknowledge_demo': True}).status_code == 403
+    monkeypatch.setattr(cfg, 'momo_secret_key', '')
+    assert client.get('/api/payments/methods').json()['methods'] == {'bank': True, 'momo': False}
+    assert client.post('/api/payments/orders', json={'method': 'momo', 'consent': True}).status_code == 503
+    monkeypatch.setattr(cfg, 'payment_public_origin', 'http://localhost:8100')
+    assert gateway.available_methods() == {'bank': False, 'momo': False}
+
+
+def test_payos_signature_matches_official_reference_vector():
+    from app.payment_gateways import signature
+    data = {'orderCode': 123, 'amount': 3000, 'description': 'VQRIO123', 'accountNumber': '12345678',
+            'reference': 'TF230204212323', 'transactionDateTime': '2023-02-04 18:25:00', 'currency': 'VND',
+            'paymentLinkId': '124c33293c43417ab7879e14c8d9eb18', 'code': '00', 'desc': 'Thành công',
+            'counterAccountBankId': '', 'counterAccountBankName': '', 'counterAccountName': '', 'counterAccountNumber': '',
+            'virtualAccountName': '', 'virtualAccountNumber': ''}
+    assert signature(data, '1a54716c8f0efb2744fb28b6e38b25da7f67a925d98bc1c18bd8faaecadd7675') == '412e915d2871504ed31be63c8f62a149a4410d34c4c42affc9006ef9917eaa03'
+
+
+def test_payos_unsigned_create_response_is_rejected_and_order_reused(client, payment_setup, monkeypatch):
+    from app import payment_gateways as gateway
+    from app.db import PaymentOrder
+    register(client)
+    calls, real_provider = payment_setup
+    def unsigned(*args, **kwargs):
+        data = real_provider(*args, **kwargs)
+        data['signature'] = 'bad'
+        return data
+    monkeypatch.setattr(gateway, 'request_json', unsigned)
+    assert client.post('/api/payments/orders', json={'method': 'bank', 'consent': True}).status_code == 400
+    with SessionLocal() as db:
+        only = db.scalars(select(PaymentOrder)).one()
+        original_id = only.id
+        assert only.status == 'creating'
+    monkeypatch.setattr(gateway, 'request_json', real_provider)
+    assert real_checkout(client)['id'] == original_id
+    assert len(calls) == 2 and calls[0][2]['orderCode'] == calls[1][2]['orderCode']
+
+
+@pytest.mark.parametrize('method', ['bank', 'momo'])
+def test_real_payment_reconcile_when_webhook_missing(client, payment_setup, monkeypatch, method):
+    from app import payment_gateways as gateway
+    from app.db import PaymentOrder
+    register(client)
+    order = real_checkout(client, method)
+    with SessionLocal() as db:
+        source = db.get(PaymentOrder, order['id'])
+        data = {'id': source.provider_id, 'orderCode': source.order_code, 'amount': source.amount,
+                'status': 'PAID', 'amountPaid': source.amount, 'amountRemaining': 0} if method == 'bank' else {
+                'partnerCode': settings().momo_partner_code, 'orderId': source.id, 'amount': source.amount,
+                'resultCode': 0, 'transId': 1234567}
+    def provider(verb, url, **kwargs):
+        if method == 'bank':
+            assert verb == 'GET'
+            return {'code': '00', 'data': data, 'signature': gateway.signature(data, settings().payos_checksum_key)}
+        return {**data, 'requestId': kwargs['json']['requestId']}
+    monkeypatch.setattr(gateway, 'request_json', provider)
+    response = client.post('/api/payments/orders/' + order['id'] + '/refresh')
+    assert response.status_code == 200, response.text
+    assert response.json()['status'] == 'paid'
+    assert client.get('/api/membership/status').json()['tier'] == 'vip'
+    # Later callback also must not add another thirty days.
+    before = client.get('/api/membership/status').json()['expires_at']
+    assert payment_callback(client, order['id']).status_code in (200, 204)
+    assert client.get('/api/membership/status').json()['expires_at'] == before
+
+
+def test_payos_uncertain_create_recovers_existing_link_without_new_order(client, payment_setup, monkeypatch):
+    from fastapi import HTTPException
+    from app import payment_gateways as gateway
+    from app.db import PaymentOrder
+    register(client)
+    def provider(verb, url, **kwargs):
+        if verb == 'POST':
+            raise HTTPException(502, 'Timeout after provider accepted the order')
+        with SessionLocal() as db:
+            order = db.scalars(select(PaymentOrder)).one()
+            data = {'id': 'existinglink123', 'orderCode': order.order_code, 'amount': order.amount, 'status': 'PENDING'}
+        return {'code': '00', 'data': data, 'signature': gateway.signature(data, settings().payos_checksum_key)}
+    monkeypatch.setattr(gateway, 'request_json', provider)
+    order = real_checkout(client)
+    assert order['checkout_url'] == 'https://pay.payos.vn/web/existinglink123'
+    assert real_checkout(client)['id'] == order['id']
+
+
+def test_payos_wrong_receiving_account_does_not_recover_or_charge(client, payment_setup, monkeypatch):
+    from app import payment_gateways as gateway
+    register(client)
+    calls, provider = payment_setup
+    def wrong_receiver(*args, **kwargs):
+        result = provider(*args, **kwargs)
+        result['data']['accountNumber'] = 'OTHER-ACCOUNT'
+        result['signature'] = gateway.signature(result['data'], settings().payos_checksum_key)
+        return result
+    monkeypatch.setattr(gateway, 'request_json', wrong_receiver)
+    response = client.post('/api/payments/orders', json={'method': 'bank', 'consent': True})
+    assert response.status_code == 409 and len(calls) == 1
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+
+
+def test_failed_momo_notification_cannot_grant_vip(client, payment_setup):
+    register(client)
+    order = real_checkout(client, 'momo')
+    assert payment_callback(client, order['id'], resultCode=1006, transId=0).status_code == 204
+    assert client.get('/api/payments/orders/' + order['id']).json()['status'] == 'pending'
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+
+
+def test_demo_time_is_not_carried_into_real_vip_and_inactive_receipt_needs_review(client, payment_setup):
+    from app.db import PaymentOrder
+    user = register(client)
+    with SessionLocal() as db:
+        account = db.get(User, user['id'])
+        account.membership_tier = 'vip'
+        account.membership_demo = True
+        account.vip_expires_at = now() + timedelta(days=100)
+        db.commit()
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+    order = real_checkout(client)
+    assert payment_callback(client, order['id']).status_code == 200
+    with SessionLocal() as db:
+        assert db.get(User, user['id']).vip_expires_at.replace(tzinfo=now().tzinfo) < now() + timedelta(days=31)
+    second = real_checkout(client, 'momo')
+    with SessionLocal() as db:
+        db.get(User, user['id']).is_active = False
+        db.commit()
+    assert payment_callback(client, second['id'], transId=999999).status_code == 204
+    with SessionLocal() as db:
+        assert db.get(PaymentOrder, second['id']).status == 'review'
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -389,9 +650,10 @@ def test_existing_database_upgrade_preserves_records_and_unknown_dates():
     initialize_database(target)
     initialize_database(target)
     with target.connect() as connection:
-        rows = {row.id:row for row in connection.execute(text('SELECT id,password_hash,membership_tier,created_at,created_at_source FROM users'))}
+        rows = {row.id:row for row in connection.execute(text('SELECT id,password_hash,membership_tier,created_at,created_at_source,failed_login_attempts,login_locked FROM users'))}
         assert len(rows) == 2 and rows['known'].password_hash == 'existing-hash'
         assert rows['known'].membership_tier == 'normal'
+        assert rows['known'].failed_login_attempts == 0 and not rows['known'].login_locked
         assert str(rows['known'].created_at).startswith('2025-01-02')
         assert rows['known'].created_at_source == 'consent_record'
         assert rows['unknown'].created_at is None
@@ -536,6 +798,77 @@ def begin_recovery(client):
     return user, result.json()['challenge'], otp_deliveries['reset:' + user['email']]
 
 
+def test_three_wrong_passwords_lock_account_and_revoke_existing_session(client):
+    user = register(client)
+    for remaining in (2, 1):
+        response = client.post('/api/auth/login', json={'email':user['email'], 'password':'wrong-password'})
+        assert response.status_code == 401
+        assert f'Còn {remaining} lần thử' in response.json()['detail']
+    response = client.post('/api/auth/login', json={'email':user['email'], 'password':'wrong-password'})
+    assert response.status_code == 423
+    assert '3 lần' in response.json()['detail']
+    assert client.get('/api/auth/me').status_code == 401
+    with SessionLocal() as db:
+        stored = db.get(User, user['id'])
+        assert stored.failed_login_attempts == 3
+        assert stored.login_locked and not stored.is_active
+    # A new browser session and even the correct password cannot bypass the lock.
+    with TestClient(app, headers=HEADERS) as another:
+        assert another.post('/api/auth/login', json={'email':user['email'].upper(), 'password':'strong-test-password'}).status_code == 423
+
+
+def test_successful_login_resets_consecutive_failures_and_accounts_are_independent(client):
+    first = register(client)
+    second = register(client, 'another@gmail.com')
+    for _ in range(2):
+        assert client.post('/api/auth/login', json={'email':first['email'], 'password':'wrong-password'}).status_code == 401
+    assert client.post('/api/auth/login', json={'email':second['email'], 'password':'strong-test-password'}).status_code == 200
+    assert client.post('/api/auth/login', json={'email':first['email'], 'password':'strong-test-password'}).status_code == 200
+    assert client.post('/api/auth/login', json={'email':first['email'], 'password':'wrong-password'}).status_code == 401
+    with SessionLocal() as db:
+        assert db.get(User, first['id']).failed_login_attempts == 1
+        assert db.get(User, second['id']).failed_login_attempts == 0
+
+
+def test_verified_password_recovery_unlocks_login_locked_account(client):
+    user, challenge, code = begin_recovery(client)
+    for _ in range(3):
+        client.post('/api/auth/login', json={'email':user['email'], 'password':'wrong-password'})
+    # The lock invalidates old recovery challenges as well as login sessions.
+    assert client.post('/api/auth/forgot-password/verify', json={'challenge':challenge, 'otp':code}).status_code == 400
+    from app.db import OtpRate
+    with SessionLocal() as db:
+        for rate in db.scalars(select(OtpRate)):
+            rate.last_sent = now() - timedelta(seconds=61)
+        db.commit()
+    result = client.post('/api/auth/forgot-password', json={'email':user['email']})
+    assert result.status_code == 202
+    verified = client.post('/api/auth/forgot-password/verify', json={'challenge':result.json()['challenge'], 'otp':otp_deliveries['reset:' + user['email']]})
+    assert verified.status_code == 200
+    assert client.post('/api/auth/reset-password', json={'token':verified.json()['token'], 'password':'new-password-123'}).status_code == 200
+    assert client.post('/api/auth/login', json={'email':user['email'], 'password':'new-password-123'}).status_code == 200
+    with SessionLocal() as db:
+        stored = db.get(User, user['id'])
+        assert stored.is_active and not stored.login_locked and stored.failed_login_attempts == 0
+
+
+def test_admin_unlock_resets_failures_but_manual_disable_stays_disabled(client):
+    admin = register(client, 'admin@gmail.com')
+    set_admin(admin['id'])
+    customer = register(client)
+    for _ in range(3):
+        client.post('/api/auth/login', json={'email':customer['email'], 'password':'wrong-password'})
+    assert client.post('/api/auth/login', json={'email':admin['email'], 'password':'strong-test-password'}).status_code == 200
+    assert client.patch('/api/admin/users/' + customer['id'], json={'is_active':True}).status_code == 200
+    assert client.post('/api/auth/login', json={'email':customer['email'], 'password':'strong-test-password'}).status_code == 200
+    with SessionLocal() as db:
+        stored = db.get(User, customer['id'])
+        assert stored.failed_login_attempts == 0 and not stored.login_locked
+        stored.is_active = False
+        db.commit()
+    assert client.post('/api/auth/login', json={'email':customer['email'], 'password':'strong-test-password'}).status_code == 401
+
+
 def test_password_recovery_requires_otp_and_invalidates_sessions(client):
     from app.db import PendingPasswordReset, ResetToken
     user, challenge, code = begin_recovery(client)
@@ -623,6 +956,7 @@ def test_password_reset_grant_expires(client):
     ('gpt-4o-mini-transcribe', {'language': 'vi'}),
 ])
 def test_voice_language_parameters_match_model(monkeypatch, model, expected):
+    monkeypatch.setattr(settings(), 'ai_provider', 'openai')
     import asyncio
     import io
     from types import SimpleNamespace
@@ -659,6 +993,7 @@ def test_empty_voice_does_not_call_provider(monkeypatch):
 
 @pytest.mark.parametrize('code,expected', [('credit_balance_exhausted', 'hết tín dụng'), ('rate_limit_exceeded', 'giới hạn số yêu cầu')])
 def test_voice_provider_limit_message(monkeypatch, code, expected):
+    monkeypatch.setattr(settings(), 'ai_provider', 'openai')
     import asyncio
     import io
     from types import SimpleNamespace
@@ -682,6 +1017,7 @@ def test_voice_provider_limit_message(monkeypatch, code, expected):
 
 
 def test_voice_accepts_browser_codec_mime(monkeypatch):
+    monkeypatch.setattr(settings(), 'ai_provider', 'openai')
     import asyncio
     import io
     from types import SimpleNamespace
@@ -699,6 +1035,7 @@ def test_voice_accepts_browser_codec_mime(monkeypatch):
 
 
 def test_voice_speech_returns_playable_audio_with_preferences(monkeypatch):
+    monkeypatch.setattr(settings(), 'ai_provider', 'openai')
     import asyncio
     from types import SimpleNamespace
     from student import api_khach_hang as main
@@ -895,6 +1232,100 @@ def test_demo_upgrade_requires_enabled_mode_and_explicit_ack(client):
     assert client.post('/api/membership/demo-upgrade', json=body).json()['expires_at'] == status['expires_at']
     assert client.get('/api/history').status_code == 200
 
+
+def test_cancel_membership_returns_to_normal_plan_immediately(client):
+    register(client)
+    assert client.post('/api/membership/cancel', json={'confirm': True}).status_code == 409
+    settings().membership_demo_enabled = True
+    client.post('/api/membership/demo-upgrade', json={'method': 'bank', 'acknowledge_demo': True})
+    assert client.get('/api/history').status_code == 200
+    assert client.post('/api/membership/cancel', json={'confirm': False}).status_code == 422
+    response = client.post('/api/membership/cancel', json={'confirm': True})
+    assert response.status_code == 200
+    status = response.json()
+    assert status['tier'] == 'normal' and status['expires_at'] is None and status['daily_question_limit'] == 20
+    assert client.get('/api/auth/me').json()['membership_tier'] == 'normal'
+    assert client.get('/api/history').status_code == 403
+
+
+def login_as(client, email):
+    response = client.post('/api/auth/login', json={'email': email, 'password': 'strong-test-password'})
+    assert response.status_code == 200, response.text
+
+
+def test_cancel_unused_demo_vip_waits_for_admin_refund(client):
+    admin = register(client, 'refund-admin@gmail.com')
+    set_admin(admin['id'])
+    student = register(client, 'refund-student@gmail.com')
+    settings().membership_demo_enabled = True
+    upgraded = client.post('/api/membership/demo-upgrade', json={'method': 'bank', 'acknowledge_demo': True}).json()
+    assert upgraded['cancel'] == {'policy': 'refund', 'amount': 300000, 'demo': True}
+    assert client.get('/api/history').status_code == 200  # Only viewing does not count as use.
+    status = client.post('/api/membership/cancel', json={'confirm': True}).json()
+    assert status['tier'] == 'normal' and status['cancel'] is None
+    assert status['refund']['status'] == 'requested' and status['refund']['amount'] == 300000
+    login_as(client, admin['email'])
+    row = next(row for row in client.get('/api/admin/payments').json() if row['service'] == 'VIP')
+    assert row['status'] == 'refund_requested' and row['note']
+    assert client.get('/api/admin/reports').json()['finance']['refund_requests'] == 1
+    assert client.patch('/api/admin/payments/' + row['id'], json={'status': 'refunded'}).status_code == 200
+    login_as(client, student['email'])
+    refund = client.get('/api/membership/status').json()['refund']
+    assert refund['status'] == 'refunded' and refund['refunded_at']
+
+
+def test_cancel_after_using_vip_is_not_refunded(client, monkeypatch):
+    admin = register(client, 'used-admin@gmail.com')
+    set_admin(admin['id'])
+    register(client, 'used-student@gmail.com')
+    settings().membership_demo_enabled = True
+    settings().openai_chat_model = 'mock'
+    monkeypatch.setattr(ai, 'client', lambda: object())
+    monkeypatch.setattr(ai, 'safe_reply', AsyncMock(return_value=('Phản hồi thử.', False)))
+    client.post('/api/membership/demo-upgrade', json={'method': 'momo', 'acknowledge_demo': True})
+    assert client.post('/api/chat', json={'messages': [{'role': 'user', 'content': 'Xin chào'}]}).status_code == 200
+    assert client.get('/api/membership/status').json()['cancel']['policy'] == 'no_refund'
+    status = client.post('/api/membership/cancel', json={'confirm': True}).json()
+    assert status['tier'] == 'normal' and status['refund'] is None
+    login_as(client, admin['email'])
+    row = next(row for row in client.get('/api/admin/payments').json() if row['service'] == 'VIP')
+    assert row['status'] == 'success'
+
+
+def test_admin_granted_vip_cancels_without_refund(client):
+    register(client)
+    grant_vip(client)
+    assert client.get('/api/membership/status').json()['cancel']['policy'] == 'none'
+    status = client.post('/api/membership/cancel', json={'confirm': True}).json()
+    assert status['tier'] == 'normal' and status['refund'] is None
+
+
+def test_cancel_unused_real_vip_requests_refund_and_callback_cannot_regrant(client, payment_setup):
+    from app.db import PaymentOrder
+    admin = register(client, 'real-refund-admin@gmail.com')
+    set_admin(admin['id'])
+    student = register(client, 'real-refund-student@gmail.com')
+    order = real_checkout(client)
+    assert payment_callback(client, order['id']).status_code == 200
+    assert client.get('/api/membership/status').json()['cancel'] == {'policy': 'refund', 'amount': 300000, 'demo': False}
+    status = client.post('/api/membership/cancel', json={'confirm': True}).json()
+    assert status['tier'] == 'normal' and status['refund']['status'] == 'requested'
+    assert payment_callback(client, order['id']).status_code == 200  # Re-delivered webhook.
+    assert client.get('/api/membership/status').json()['tier'] == 'normal'
+    login_as(client, admin['email'])
+    url = '/api/admin/payments/real:' + order['id']
+    row = next(row for row in client.get('/api/admin/payments').json() if row['id'] == 'real:' + order['id'])
+    assert row['status'] == 'refund_requested'
+    assert client.patch(url, json={'status': 'refund_requested'}).status_code == 409
+    assert client.patch(url, json={'status': 'refunded', 'note': 'Đã chuyển khoản trả'}).status_code == 200
+    assert client.patch(url, json={'status': 'refunded'}).status_code == 409
+    finance = client.get('/api/admin/reports').json()['finance']
+    assert finance['real_total'] == 0 and finance['real_refunded'] == 300000
+    with SessionLocal() as db:
+        saved = db.get(PaymentOrder, order['id'])
+        assert saved.status == 'paid' and saved.refund_status == 'refunded' and saved.refund_note == 'Đã chuyển khoản trả'
+    login_as(client, student['email'])
+    assert client.get('/api/membership/status').json()['refund']['status'] == 'refunded'
 
 def test_vip_expiry_revokes_permissions_without_deleting_data(client):
     user = register(client)
@@ -1811,3 +2242,49 @@ def test_weekly_schedule_api_ownership_directory_and_double_booking(client):
     assert client.post('/api/auth/login',json={'email':student['email'],'password':'strong-test-password'}).status_code==200
     assert client.delete('/api/bookings/'+bid).status_code==200
     assert next(s for s in client.get(url).json()['slots'] if s['time']=='08:00')['available'] is True
+
+
+@pytest.mark.parametrize('blocked', [False, True])
+def test_gemini_voice_routes(monkeypatch, blocked):
+    import asyncio
+    import io
+    from types import SimpleNamespace
+    from fastapi import HTTPException
+    from starlette.datastructures import UploadFile, Headers
+    from student import api_khach_hang as main
+    monkeypatch.setattr(settings(), 'ai_provider', 'gemini')
+    api = SimpleNamespace(transcribe=AsyncMock(return_value='Xin chào'), speak=AsyncMock(return_value=(b'RIFF-test', 'audio/wav')))
+    monkeypatch.setattr(main.ai, 'client', lambda: api)
+    monkeypatch.setattr(main.ai, 'moderate', AsyncMock(return_value=SimpleNamespace(flagged=blocked)))
+    for name in ['use_budget', 'ensure_allowance', 'consume_reply']:
+        monkeypatch.setattr(main, name, lambda *args, **kwargs: None)
+    audio = UploadFile(io.BytesIO(b'clip'), headers=Headers({'content-type': 'audio/webm;codecs=opus'}))
+    assert asyncio.run(main.transcribe(audio, user=object(), db=object())) == {'text': 'Xin chào'}
+    api.transcribe.assert_awaited_once_with(b'clip', 'audio/webm', settings().gemini_transcribe_model)
+    body = main.Speak(text='Xin chào', voice='coral', voice_style='calm', speed=0.9)
+    if blocked:
+        with pytest.raises(HTTPException) as error:
+            asyncio.run(main.speak(body, user=object(), db=object()))
+        assert error.value.status_code == 422
+        api.speak.assert_not_awaited()
+    else:
+        result = asyncio.run(main.speak(body, user=object(), db=object()))
+        assert result.media_type == 'audio/wav' and result.body == b'RIFF-test'
+        api.speak.assert_awaited_once_with('Xin chào', settings().gemini_tts_model, 'coral', 'calm', 0.9)
+
+
+def test_voice_chat_returns_checked_reply_without_delivery_delay(client, monkeypatch):
+    from app.schemas import Message
+    register(client)
+    monkeypatch.setattr(ai, 'client', lambda: object())
+    monkeypatch.setattr(ai, 'chat_model', lambda: 'mock')
+    reply = AsyncMock(return_value=('Mình đang lắng nghe bạn.', False))
+    monkeypatch.setattr(ai, 'safe_reply', reply)
+    def unexpected_delay(*args):
+        raise AssertionError('Voice must not wait for simulated text streaming')
+    monkeypatch.setattr(ai, 'stream_reply', unexpected_delay)
+    result = client.post('/api/chat', json={'messages': [{'role': 'user', 'content': 'Mình hơi lo.'}], 'voice_mode': True})
+    assert result.status_code == 200
+    assert 'Mình đang lắng nghe bạn.' in result.text
+    assert '"done":true' in result.text
+    reply.assert_awaited_once_with([Message(role='user', content='Mình hơi lo.')], voice_mode=True)

@@ -96,8 +96,8 @@ def payout(body: PayoutInput, user: User = Depends(admin_user), db: Session = De
     amount = min(state['balance'], eligible - state['paid'])
     if amount <= 0:
         fail('Không có số dư đủ điều kiện chi trả. Khoản hoàn sẽ được trừ vào thu nhập tiếp theo.')
-    entry = ExpertPayout(expert_id=body.expert_id, month=body.month, amount=amount)
-    db.add(entry)
+    payout = ExpertPayout(expert_id=body.expert_id, month=body.month, amount=amount)
+    db.add(payout)
     db.add(Audit(actor=user.id, action=f'expert_payout:{body.expert_id}:{body.month}'))
     db.commit()
     return wallet(db, body.expert_id)

@@ -86,10 +86,24 @@ def initialize_database(target=engine):
             if name not in booking_columns:
                 connection.execute(text(f'ALTER TABLE bookings ADD COLUMN {name} {sql_type}'))
         columns = {column['name'] for column in inspect(connection).get_columns('users')}
+        if 'failed_login_attempts' not in columns:
+            connection.execute(text('ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER NOT NULL DEFAULT 0'))
+        if 'login_locked' not in columns:
+            default = 'FALSE' if postgres else '0'
+            connection.execute(text(f'ALTER TABLE users ADD COLUMN login_locked BOOLEAN NOT NULL DEFAULT {default}'))
         plan_columns = {column['name'] for column in inspect(connection).get_columns('plan_usage')}
         for name, sql_type in [('active_client', 'VARCHAR(64)'), ('pending_reply_hash', 'VARCHAR(64)')]:
             if name not in plan_columns:
                 connection.execute(text(f'ALTER TABLE plan_usage ADD COLUMN {name} {sql_type} NULL'))
+        if 'vip_used_at' not in columns:
+            date_type = 'TIMESTAMP WITH TIME ZONE' if postgres else 'DATETIME'
+            connection.execute(text(f'ALTER TABLE users ADD COLUMN vip_used_at {date_type} NULL'))
+        order_columns = {column['name'] for column in inspect(connection).get_columns('payment_orders')}
+        date_type = 'TIMESTAMP WITH TIME ZONE' if postgres else 'DATETIME'
+        for name, sql_type in [('refund_status', 'VARCHAR(16) NULL'), ('refund_requested_at', f'{date_type} NULL'),
+                               ('refunded_at', f'{date_type} NULL'), ('refund_note', "TEXT NOT NULL DEFAULT ''")]:
+            if name not in order_columns:
+                connection.execute(text(f'ALTER TABLE payment_orders ADD COLUMN {name} {sql_type}'))
         if 'vip_expires_at' not in columns:
             date_type = 'TIMESTAMP WITH TIME ZONE' if postgres else 'DATETIME'
             connection.execute(text(f'ALTER TABLE users ADD COLUMN vip_expires_at {date_type} NULL'))

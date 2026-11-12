@@ -1,10 +1,15 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Check, LockKeyhole, QrCode, Sparkles, Crown, X, Wallet, Landmark, FileText, Info, ArrowRight, Gauge, CalendarDays } from "lucide-react";
+import { Check, LockKeyhole, QrCode, Sparkles, Crown, X, Wallet, Landmark, FileText, Info, ArrowRight, Gauge, CalendarDays, TriangleAlert, Clock3, BadgeCheck } from "lucide-react";
 import { api, type User } from "@/lib/api";
+import LiveVipCheckout from "./thanh-toan-that";
 
-export type PlanStatus = { tier: "normal" | "vip"; expires_at: string | null; demo: boolean; demo_enabled: boolean; remaining_questions: number; remaining_seconds: number; daily_question_limit: number; daily_seconds_limit: number; exhausted: boolean; reset_at: string; };
+export type PlanStatus = { tier: "normal" | "vip"; expires_at: string | null; demo: boolean; demo_enabled: boolean; payments_enabled?: boolean; payment_methods?: { bank: boolean; momo: boolean }; remaining_questions: number; remaining_seconds: number; daily_question_limit: number; daily_seconds_limit: number; exhausted: boolean; reset_at: string;
+  /** What cancelling VIP now would do: refund (bought, not used yet), no_refund (already used), none (not bought). */
+  cancel?: { policy: "refund" | "no_refund" | "none"; amount: number; demo: boolean } | null;
+  refund?: { status: "requested" | "refunded"; amount: number; demo: boolean; requested_at: string; refunded_at: string | null } | null; };
+const money = (n: number) => `${n.toLocaleString("vi-VN")}đ`;
 export const vipRoutes = ["/history", "/experts", "/book-visit", "/healing"];
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 /** Sidebar card: today's remaining chat questions and minutes (normal plan), or unlimited use (VIP). */
@@ -44,21 +49,77 @@ export function VipGate({ exhausted = false }: { exhausted?: boolean }) {
 }
 export function PlanPage({ user, plan, refresh }: { user: User | null; plan: PlanStatus | null; refresh: () => Promise<void> }) {
   const [method, setMethod] = useState<"bank" | "momo">("bank"), [checkout, setCheckout] = useState(false), [agree, setAgree] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const [restoredOrder, setRestoredOrder] = useState<string | undefined>();
+  const [confirmCancel, setConfirmCancel] = useState(false), [cancelBusy, setCancelBusy] = useState(false), [cancelError, setCancelError] = useState(""), [checkingCancel, setCheckingCancel] = useState(false);
+  const live = !!plan?.payments_enabled;
+  useEffect(() => {
+    if (!user || !live) return;
+    const params = new URLSearchParams(window.location.search);
+    let id = params.get("payment_order");
+    try { id ||= localStorage.getItem(`lac-lac:payment:${user.id}`); } catch { /* optional storage */ }
+    if (id) { setRestoredOrder(id); setCheckout(true); }
+    if (params.has("payment_order")) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, [user?.id, live]);
   if (!user) return <section className="plan-gate panel"><h2>Đăng nhập để xem gói của bạn</h2><Link href="/login" className="button primary">Đăng nhập</Link></section>;
   async function activate() {
     if (!agree || busy) return; setBusy(true); setError("");
     try { await api('/membership/demo-upgrade', { method: 'POST', body: JSON.stringify({ method, acknowledge_demo: agree }) }); await refresh(); setCheckout(false); }
     catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }
-  return <div className="plans-page"><h1>Chọn cách Lạc Lạc đồng hành cùng bạn</h1><p className="plan-demo-note">Bản thử thanh toán — không thu tiền, không quét mã chuyển khoản thật.</p>{error && <p role="alert">{error}</p>}
+  async function openCancel() {
+    // Refresh first: whether the plan is still refundable can change after the page loaded.
+    setCancelError(""); setConfirmCancel(true); setCheckingCancel(true);
+    try { await refresh(); } catch { /* keep the last known terms */ } finally { setCheckingCancel(false); }
+  }
+  async function cancelMembership() {
+    if (cancelBusy) return; setCancelBusy(true); setCancelError("");
+    try { await api('/membership/cancel', { method: 'POST', body: JSON.stringify({ confirm: true }) }); await refresh(); setConfirmCancel(false); }
+    catch (e) { setCancelError((e as Error).message); } finally { setCancelBusy(false); }
+  }
+  return <div className="plans-page"><h1>Chọn cách Lạc Lạc đồng hành cùng bạn</h1><p className="plan-demo-note">{live ? "Thanh toán qua MB Bank hoặc MoMo. VIP được kích hoạt sau khi xác nhận tiền về." : plan?.demo_enabled ? "Bản thử thanh toán — không thu tiền, không quét mã chuyển khoản thật." : "Thanh toán đang được thiết lập, chưa nhận tiền."}</p>{error && <p role="alert">{error}</p>}
+    {plan?.refund && (plan.refund.status === "requested" || plan.tier === "normal") && <RefundNotice refund={plan.refund} />}
     <div className="plan-cards"><section className="plan-card panel"><span className="eyebrow">GÓI THƯỜNG</span><h2>Miễn phí</h2><strong className="plan-price">0đ</strong><ul>{["Chat và tâm sự: 20 lượt hỏi hoặc 10 phút/ngày", "Dùng chung hạn mức, chạm mốc nào trước thì dừng", "Chỉ tính thời gian mở và sử dụng chat/tâm sự", "Test tâm lý và hỗ trợ khẩn cấp", "Đổi mật khẩu, đăng xuất"].map(t => <li key={t}><Check size={16} />{t}</li>)}</ul>{plan?.tier === 'normal' && <span className="plan-current">Gói hiện tại</span>}</section>
-    <section className="plan-card panel featured"><span className="eyebrow">THÀNH VIÊN VIP</span><h2>Đồng hành trọn vẹn hơn</h2><strong className="plan-price">300.000đ <small>/ 30 ngày</small></strong><ul>{["Chat và tâm sự 200 lượt hỏi mỗi ngày, không giới hạn thời gian", "Lịch sử trò chuyện theo lựa chọn lưu của bạn", "Kết nối chuyên gia, lịch hẹn, góc bình yên", "Cài đặt đầy đủ và Test tâm lý"].map(t => <li key={t}><Check size={16} />{t}</li>)}</ul><p className="muted">Vẫn áp dụng hạn mức vận hành và số dư API. Gói này không bao gồm phí khám hoặc tư vấn chuyên gia.</p>{plan?.tier === 'vip' ? <div className="plan-current"><span className="plan-tier-label"><Crown size={19} className="vip-gold-crown" aria-hidden="true" />{plan.demo ? "VIP dùng thử" : "VIP đang hoạt động"}</span>{plan.expires_at && <p>Đến {new Date(plan.expires_at).toLocaleString('vi-VN')}</p>}</div> : <button className="button primary full" disabled={!plan?.demo_enabled} onClick={() => { setAgree(false); setError(""); setCheckout(true); }}><Sparkles size={16} />Nâng Cấp Gói VIP</button>}</section></div>
-    <section className="panel plan-management"><h2>Quyền lợi gói</h2><p>Gói hiện tại: <strong className="plan-tier-label">{plan?.tier === "vip" && <Crown size={18} className="vip-gold-crown" aria-hidden="true" />}{plan?.tier === "vip" ? "VIP" : "Thường"}</strong></p>{plan?.tier === 'normal' && <p>Hôm nay còn {plan.remaining_questions}/{plan.daily_question_limit} lượt hỏi và {Math.floor(plan.remaining_seconds / 60)} phút {plan.remaining_seconds % 60} giây.</p>}{plan?.tier === 'vip' && <p>Hôm nay còn {plan.remaining_questions}/{plan.daily_question_limit} lượt hỏi.</p>}<p>Hết hạn VIP sẽ trở về gói thường. Không tự gia hạn hoặc tự trừ tiền.</p></section>
-    {checkout && <VipCheckout method={method} setMethod={setMethod} agree={agree} setAgree={setAgree} busy={busy} error={error} close={() => setCheckout(false)} activate={activate} />}
+    <section className="plan-card panel featured"><span className="eyebrow">THÀNH VIÊN VIP</span><h2>Đồng hành trọn vẹn hơn</h2><strong className="plan-price">300.000đ <small>/ 30 ngày</small></strong><ul>{["Chat và tâm sự 200 lượt hỏi mỗi ngày, không giới hạn thời gian", "Lịch sử trò chuyện theo lựa chọn lưu của bạn", "Kết nối chuyên gia, lịch hẹn, góc bình yên", "Cài đặt đầy đủ và Test tâm lý"].map(t => <li key={t}><Check size={16} />{t}</li>)}</ul><p className="muted">Vẫn áp dụng hạn mức vận hành và số dư API. Gói này không bao gồm phí khám hoặc tư vấn chuyên gia.</p>{plan?.tier === 'vip' ? <div className="plan-current"><span className="plan-tier-label"><Crown size={19} className="vip-gold-crown" aria-hidden="true" />{plan.demo ? "VIP dùng thử" : "VIP đang hoạt động"}</span>{plan.expires_at && <p>Đến {new Date(plan.expires_at).toLocaleString('vi-VN')}</p>}</div> : <button className="button primary full" disabled={live ? !plan?.payment_methods?.bank && !plan?.payment_methods?.momo : !plan?.demo_enabled} onClick={() => { setAgree(false); setError(""); setCheckout(true); }}><Sparkles size={16} />Nâng Cấp Gói VIP</button>}</section></div>
+    <section className="panel plan-management"><h2>Quyền lợi gói</h2><p>Gói hiện tại: <strong className="plan-tier-label">{plan?.tier === "vip" && <Crown size={18} className="vip-gold-crown" aria-hidden="true" />}{plan?.tier === "vip" ? "VIP" : "Thường"}</strong></p>{plan?.tier === 'normal' && <p>Hôm nay còn {plan.remaining_questions}/{plan.daily_question_limit} lượt hỏi và {Math.floor(plan.remaining_seconds / 60)} phút {plan.remaining_seconds % 60} giây.</p>}{plan?.tier === 'vip' && <p>Hôm nay còn {plan.remaining_questions}/{plan.daily_question_limit} lượt hỏi.</p>}<p>Hết hạn VIP sẽ trở về gói thường. Không tự gia hạn hoặc tự trừ tiền.</p>
+      {plan?.tier === 'vip' && <p>Hủy khi chưa sử dụng (chưa chat, tâm sự hay đặt lịch) được hoàn tiền sau khi admin xác nhận. Đã sử dụng thì không hoàn tiền.</p>}
+      {plan?.tier === 'vip' && (confirmCancel
+        ? <CancelConfirm terms={plan.cancel} checking={checkingCancel} busy={cancelBusy} error={cancelError} keep={() => setConfirmCancel(false)} confirm={cancelMembership} />
+        : <div className="button-row plan-cancel-row"><button className="button outline danger-outline" onClick={openCancel}>Hủy đăng ký</button></div>)}
+    </section>
+    {checkout && (live ? <LiveVipCheckout userId={user.id} methods={plan?.payment_methods || { bank: false, momo: false }} initialOrderId={restoredOrder} close={() => { setCheckout(false); setRestoredOrder(undefined); }} refresh={refresh} /> : <VipCheckout method={method} setMethod={setMethod} agree={agree} setAgree={setAgree} busy={busy} error={error} close={() => setCheckout(false)} activate={activate} />)}
   </div>;
 }
 
 
+
+function CancelConfirm({ terms, checking, busy, error, keep, confirm }: {
+  terms: PlanStatus["cancel"]; checking: boolean; busy: boolean; error: string; keep: () => void; confirm: () => Promise<void>;
+}) {
+  const policy = terms?.policy || "none", amount = money(terms?.amount || 0), demo = terms?.demo ? " (mô phỏng, không có tiền thật)" : "";
+  const action = policy === "refund" ? "Hủy và yêu cầu hoàn tiền" : policy === "no_refund" ? "Vẫn hủy, không hoàn tiền" : "Xác nhận hủy";
+  return <div className={`plan-cancel-confirm ${policy === "no_refund" ? "is-warning" : ""}`} role="alertdialog" aria-labelledby="plan-cancel-title" aria-describedby="plan-cancel-text">
+    <strong id="plan-cancel-title">Hủy đăng ký gói VIP?</strong>
+    <div id="plan-cancel-text">
+      {checking ? <p>Đang kiểm tra điều kiện hoàn tiền…</p>
+        : policy === "refund" ? <p className="plan-refund-ok"><BadgeCheck size={18} aria-hidden="true" /><span>Bạn chưa sử dụng gói VIP kể từ khi đăng ký nên được <b>hoàn {amount}</b>{demo}. Sau khi hủy, yêu cầu hoàn tiền sẽ được gửi đến admin. Trang này sẽ hiện trạng thái <b>Đang chờ hoàn tiền</b> cho đến khi admin xác nhận đã hoàn.</span></p>
+        : policy === "no_refund" ? <p className="plan-refund-warning"><TriangleAlert size={18} aria-hidden="true" /><span><b>Bạn sẽ không được hoàn tiền.</b> Bạn đã sử dụng gói VIP (đã chat, tâm sự hoặc đặt lịch) kể từ khi đăng ký. Hủy bây giờ sẽ mất toàn bộ thời gian VIP còn lại.</span></p>
+        : <p>Gói VIP này không phát sinh thanh toán nên không có khoản hoàn tiền.</p>}
+      <p>Quyền VIP kết thúc ngay, tài khoản trở về gói thường (20 lượt hỏi hoặc 10 phút mỗi ngày). Dữ liệu đã lưu vẫn được giữ.</p>
+    </div>
+    {error && <p className="checkout-error" role="alert">{error}</p>}
+    <div className="button-row"><button className="button outline" onClick={keep} disabled={busy} autoFocus>Giữ gói VIP</button><button className="button outline danger-outline" onClick={confirm} disabled={busy || checking}>{busy ? "Đang hủy…" : action}</button></div>
+  </div>;
+}
+
+function RefundNotice({ refund }: { refund: NonNullable<PlanStatus["refund"]> }) {
+  const when = (value: string) => new Date(value).toLocaleString("vi-VN");
+  const demo = refund.demo ? " Đây là giao dịch mô phỏng nên không có tiền thật được chuyển." : "";
+  return refund.status === "requested"
+    ? <section className="plan-refund-notice is-pending" role="status"><Clock3 size={20} aria-hidden="true" /><div><strong>Đang chờ admin hoàn tiền</strong><p>Bạn đã hủy gói VIP khi chưa sử dụng. Yêu cầu hoàn {money(refund.amount)} gửi lúc {when(refund.requested_at)} đang chờ admin xử lý.{demo}</p></div></section>
+    : <section className="plan-refund-notice" role="status"><BadgeCheck size={20} aria-hidden="true" /><div><strong>Đã hoàn tiền</strong><p>Admin đã xác nhận hoàn {money(refund.amount)}{refund.refunded_at ? ` lúc ${when(refund.refunded_at)}` : ""}.{demo}</p></div></section>;
+}
 
 function VipCheckout({ method, setMethod, agree, setAgree, busy, error, close, activate }: {
   method: "bank" | "momo"; setMethod: (value: "bank" | "momo") => void;

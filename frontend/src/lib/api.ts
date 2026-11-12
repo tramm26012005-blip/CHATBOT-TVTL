@@ -72,6 +72,7 @@ export async function chatStream(
   conversationId: string | null,
   signal: AbortSignal,
   onEvent: (event: any) => void,
+  voiceMode = false,
 ) {
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -81,6 +82,7 @@ export async function chatStream(
       messages: messages.slice(-24),
       save,
       conversation_id: conversationId,
+      voice_mode: voiceMode,
     }),
     signal,
   });

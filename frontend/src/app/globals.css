@@ -4115,6 +4115,25 @@ html[data-theme="dark"] .usage-head strong, html[data-theme="dark"] .usage-foot 
 .plan-current p { font-size: 12px; }
 .plan-management { margin-top: 20px; padding: 22px; }
 .plan-management p { margin-top: 10px; font-size: 14px; }
+.plan-cancel-row { margin-top: 16px; }
+.plan-cancel-confirm { margin-top: 16px; padding: 16px; border: 1px solid #ead9d0; border-radius: 14px; background: color-mix(in srgb, #ead9d0 22%, transparent); }
+.plan-cancel-confirm .button-row { margin-top: 14px; flex-wrap: wrap; }
+[data-theme="dark"] .plan-cancel-confirm { border-color: #5a4038; background: #2a2622; }
+[data-theme="dark"] .plan-management .danger-outline { color: #e0a596; border-color: #5a4038; }
+.plan-cancel-confirm.is-warning { border-color: #d9a597; background: color-mix(in srgb, #f3d6cc 45%, transparent); }
+.plan-cancel-confirm .plan-refund-ok, .plan-cancel-confirm .plan-refund-warning { display: flex; gap: 8px; align-items: flex-start; }
+.plan-cancel-confirm .plan-refund-ok svg { color: var(--green-dark); flex: none; margin-top: 2px; }
+.plan-cancel-confirm .plan-refund-warning { color: #9a4a38; }
+.plan-cancel-confirm .plan-refund-warning svg { flex: none; margin-top: 2px; }
+.plan-refund-notice { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; margin: 0 0 20px; border-radius: 14px; border: 1px solid var(--line); background: var(--soft); }
+.plan-refund-notice svg { color: var(--green-dark); flex: none; margin-top: 2px; }
+.plan-refund-notice p { margin-top: 4px; font-size: 14px; }
+.plan-refund-notice.is-pending { border-color: #e6c98f; background: color-mix(in srgb, #f6e7c4 55%, transparent); }
+.plan-refund-notice.is-pending svg { color: #a77a1f; }
+[data-theme="dark"] .plan-cancel-confirm.is-warning { border-color: #7a4a3e; background: #33251f; }
+[data-theme="dark"] .plan-cancel-confirm .plan-refund-warning { color: #f0b3a3; }
+[data-theme="dark"] .plan-refund-notice.is-pending { border-color: #6b5626; background: #2e2a1c; }
+[data-theme="dark"] .plan-refund-notice.is-pending svg { color: #e2bd6a; }
 .plan-gate { max-width: 650px; margin: 28px auto; padding: 32px; text-align: center; display: grid; justify-items: center; gap: 18px; }
 .demo-checkout { max-height: 90dvh; overflow-y: auto; }
 .demo-checkout .button-row { margin: 18px 0; flex-wrap: wrap; }

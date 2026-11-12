@@ -22,7 +22,7 @@ def start(body, db):
     db.execute(delete(PendingPasswordReset).where(PendingPasswordReset.expires <= now()))
     if body.previous_challenge:
         db.execute(delete(PendingPasswordReset).where(PendingPasswordReset.challenge_hash == digest(body.previous_challenge)))
-    user = db.scalar(select(User).where(User.email == email, User.is_active == True))
+    user = db.scalar(select(User).where(User.email == email, (User.is_active == True) | (User.login_locked == True)))
     if user:
         db.execute(delete(ResetToken).where(ResetToken.user_id == user.id))
         db.execute(delete(PendingPasswordReset).where(PendingPasswordReset.user_id == user.id))
@@ -51,7 +51,7 @@ def verify(body, db):
         db.commit()
         raise HTTPException(400, 'Mã OTP không đúng. Sau 5 lần nhập sai, hãy yêu cầu mã mới.')
     user = db.get(User, pending.user_id)
-    if not user or not user.is_active:
+    if not user or (not user.is_active and not user.login_locked):
         db.delete(pending); db.commit()
         raise HTTPException(400, 'Yêu cầu khôi phục không còn hợp lệ.')
     token = secrets.token_urlsafe(40)

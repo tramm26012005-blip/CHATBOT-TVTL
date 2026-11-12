@@ -1,5 +1,4 @@
-"""Operational admin pages. Financial records currently represent demo payments only."""
-import hashlib
+"""Operational admin pages. Real VIP receipts are separate from demo settlements."""
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -9,10 +8,10 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.config import settings
-from app.db import Audit, Booking, Content, PrivateRecord, User, PlanUsage, ConsultationLedger, db_session, now
+from app.db import Audit, Booking, Content, PrivateRecord, User, PlanUsage, ConsultationLedger, PaymentOrder, db_session, now
 from app.security import admin_user, decrypt
 from app.admin_settings import KEY, operating_settings
-from student.goi_thanh_vien import VN
+from student.goi_thanh_vien import VN, demo_payment_key
 
 router = APIRouter(prefix='/api/admin')
 
@@ -26,6 +25,12 @@ def payment_rows(db):
     sync_all(db)
     names = {user.id: user.name for user in db.scalars(select(User)).all()}
     rows = []
+    for order in db.scalars(select(PaymentOrder)).all():
+        status = {'requested': 'refund_requested', 'refunded': 'refunded'}.get(order.refund_status or '', order.status)
+        rows.append({'id': 'real:' + order.id, 'user': names.get(order.user_id, 'Tài khoản đã xóa'),
+            'service': 'VIP', 'amount': order.amount, 'created': utc(order.paid_at or order.created).isoformat(),
+            'demo': False, 'method': order.method, 'status': status,
+            'note': order.refund_note if order.refund_status else 'Cần đối soát thủ công' if order.status == 'review' else ''})
     for row in db.scalars(select(Audit).where(Audit.action.like('membership:demo:%'))).all():
         rows.append({'id': 'vip:' + row.id, 'user': names.get(row.actor, 'Tài khoản đã xóa'), 'service': 'VIP', 'amount': 300000, 'created': utc(row.created).isoformat(), 'demo': True, 'status': 'success'})
     for entry in db.scalars(select(ConsultationLedger)).all():
@@ -37,7 +42,7 @@ def payment_rows(db):
         rows.append({'id': 'booking:' + entry.booking_id, 'user': names.get(entry.user_id, 'Tài khoản đã xóa'), 'service': 'Tư vấn', 'amount': data['amount'], 'created': utc(row.created).isoformat() if row else data.get('allocated_at', now().isoformat()), 'demo': True, 'status': status, 'settlement': data['settlement'], 'expert_share': data['amount'] * 80 // 100, 'admin_share': data['amount'] - data['amount'] * 80 // 100})
     decisions = {data['payment_id']: data for row in db.scalars(select(Content).where(Content.kind == 'internal_payment')).all() if (data := json.loads(row.payload)).get('payment_id')}
     for row in rows:
-        if row['service'] == 'Tư vấn':
+        if row['service'] == 'Tư vấn' or not row['demo']:
             continue
         decision = decisions.get(row['id'], {})
         row['status'] = decision.get('status', 'success')
@@ -48,7 +53,8 @@ def payment_rows(db):
 def metrics(db, current):
     today = current.astimezone(VN).date()
     rows = payment_rows(db)
-    retained = [row for row in rows if row['status'] != 'refunded' and row.get('settlement', 'allocated') == 'allocated']
+    real_paid = [row for row in rows if not row['demo'] and row['status'] == 'paid']
+    retained = [row for row in rows if row['demo'] and row['status'] != 'refunded' and row.get('settlement', 'allocated') == 'allocated']
     months = []
     for offset in range(5, -1, -1):
         index = today.year * 12 + today.month - 1 - offset
@@ -66,7 +72,8 @@ def metrics(db, current):
         series.append({'day': day.isoformat(), 'conversations': sum(utc(row.created).astimezone(VN).date() == day for row in conversations)})
     return {'conversations': {'total': len(conversations), 'week': current_week(conversations)}, 'assessments': {'total': len(assessments), 'week': current_week(assessments)},
             'conversation_series': series, 'topic_distribution': [], 'topic_note': 'Chưa thu thập chủ đề có sự đồng ý để thống kê. Không đọc nội dung trò chuyện để tạo thống kê.',
-            'finance': {'demo': True, 'real_total': None, 'total': sum(row['amount'] if row['service'] == 'VIP' else row['admin_share'] for row in retained), 'vip': sum(row['amount'] for row in retained if row['service'] == 'VIP'), 'consultation': sum(row['expert_share'] for row in retained if row['service'] == 'Tư vấn'), 'admin_commission': sum(row['admin_share'] for row in retained if row['service'] == 'Tư vấn'), 'held': sum(row['amount'] for row in rows if row.get('settlement') == 'held'), 'pending': sum(row.get('settlement') == 'held' for row in rows), 'refund_requests': sum(row['status'] == 'refund_requested' for row in rows), 'refunded': sum(row['amount'] for row in rows if row['status'] == 'refunded'), 'months': months, 'recent': rows[:5]},
+            'finance': {'demo': True, 'real_total': sum(row['amount'] for row in real_paid) if real_paid or settings().payments_enabled else None, 'total': sum(row['amount'] if row['service'] == 'VIP' else row['admin_share'] for row in retained), 'vip': sum(row['amount'] for row in retained if row['service'] == 'VIP'), 'consultation': sum(row['expert_share'] for row in retained if row['service'] == 'Tư vấn'), 'admin_commission': sum(row['admin_share'] for row in retained if row['service'] == 'Tư vấn'), 'held': sum(row['amount'] for row in rows if row.get('settlement') == 'held'), 'pending': sum(row.get('settlement') == 'held' for row in rows), 'refund_requests': sum(row['status'] == 'refund_requested' for row in rows), 'refunded': sum(row['amount'] for row in rows if row['demo'] and row['status'] == 'refunded'),
+            'real_refunded': sum(row['amount'] for row in rows if not row['demo'] and row['status'] == 'refunded'), 'months': months, 'recent': rows[:5]},
             'measurement_note': 'Chỉ thống kê cuộc trò chuyện và bài test được sinh viên đồng ý lưu. Không phải tổng số phiên đã sử dụng.'}
 
 
@@ -80,11 +87,36 @@ class PaymentUpdate(BaseModel):
     note: str = Field(default='', max_length=500)
 
 
+@router.post('/payments/real:{order_id}/refresh')
+def refresh_real_payment(order_id: str, user: User = Depends(admin_user), db: Session = Depends(db_session)):
+    from student.thanh_toan import reconcile, view
+    order = db.get(PaymentOrder, order_id)
+    if order is None:
+        raise HTTPException(404, 'Không tìm thấy đơn thanh toán thật.')
+    reconcile(db, order)
+    return view(order)
+
+
 @router.patch('/payments/{payment_id:path}')
 def payment_action(payment_id: str, body: PaymentUpdate, user: User = Depends(admin_user), db: Session = Depends(db_session)):
+    if payment_id.startswith('real:'):
+        # Real money goes back by bank/MoMo transfer outside the app; the admin confirms it here
+        # only for a refund the student earned by cancelling unused VIP.
+        order = db.scalar(select(PaymentOrder).where(PaymentOrder.id == payment_id.removeprefix('real:')).with_for_update())
+        if order is None:
+            raise HTTPException(404, 'Không tìm thấy giao dịch.')
+        if body.status != 'refunded' or order.refund_status != 'requested':
+            raise HTTPException(409, 'Giao dịch thật chỉ xác nhận hoàn khi sinh viên đã hủy gói lúc chưa sử dụng.')
+        order.refund_status = 'refunded'
+        order.refunded_at = now()
+        if body.note.strip():
+            order.refund_note = body.note.strip()
+        db.add(Audit(actor=user.id, action=f'payment_real:{order.id}:refunded'))
+        db.commit()
+        return {'ok': True, 'demo': False}
     if payment_id.startswith('booking:'):
         raise HTTPException(409, 'Xử lý yêu cầu tư vấn trong mục Giữ tiền và xét duyệt; không đổi trạng thái trực tiếp.')
-    key = 'pay-' + hashlib.sha256(payment_id.encode()).hexdigest()[:32]
+    key = demo_payment_key(payment_id)
     # Lock existing source records too, to serialize the first disposition.
     source_type, _, source_id = payment_id.partition(':')
     if source_type not in ('vip', 'booking'):
@@ -100,7 +132,10 @@ def payment_action(payment_id: str, body: PaymentUpdate, user: User = Depends(ad
     if not row:
         row = Content(id=key, kind='internal_payment', published=False)
         db.add(row)
-    row.payload = json.dumps({'payment_id': payment_id, 'status': body.status, 'note': body.note.strip()}, ensure_ascii=False)
+    previous = json.loads(row.payload) if row.payload else {}
+    stamp = 'requested_at' if body.status == 'refund_requested' else 'refunded_at'
+    row.payload = json.dumps({**previous, 'payment_id': payment_id, 'status': body.status, stamp: now().isoformat(),
+                              'note': body.note.strip() or previous.get('note', '')}, ensure_ascii=False)
     db.add(Audit(actor=user.id, action=f'payment_demo:{source_id}:{body.status}'))
     db.commit()
     return {'ok': True, 'demo': True}
@@ -158,14 +193,14 @@ def admin_search(q: str = Query(min_length=1, max_length=100), user: User = Depe
     for row in db.scalars(select(User).where(User.role == 'student')).all():
         if query in f'{row.name} {row.email}'.casefold():
             results.append({'id': row.id, 'section': 'users', 'title': row.name, 'subtitle': row.email})
-    for row in db.scalars(select(Content).where(Content.kind == 'experts')).all():
-        profile = json.loads(row.payload)
+    for expert in db.scalars(select(Content).where(Content.kind == 'experts')).all():
+        profile = json.loads(expert.payload)
         if query in f"{profile.get('name', '')} {profile.get('specialty', '')}".casefold():
-            results.append({'id': row.id, 'section': 'experts', 'title': profile.get('name', ''), 'subtitle': profile.get('specialty', '')})
+            results.append({'id': expert.id, 'section': 'experts', 'title': profile.get('name', ''), 'subtitle': profile.get('specialty', '')})
     names = {row.id: row.name for row in db.scalars(select(User)).all()}
-    for row in db.scalars(select(Booking)).all():
-        if query in f"{row.id} {names.get(row.user_id, '')} {row.starts_at}".casefold():
-            results.append({'id': row.id, 'section': 'bookings', 'title': names.get(row.user_id, 'Lịch hẹn'), 'subtitle': row.starts_at})
+    for booking in db.scalars(select(Booking)).all():
+        if query in f"{booking.id} {names.get(booking.user_id, '')} {booking.starts_at}".casefold():
+            results.append({'id': booking.id, 'section': 'bookings', 'title': names.get(booking.user_id, 'Lịch hẹn'), 'subtitle': booking.starts_at})
     for row in payment_rows(db):
         if query in f"{row['id']} {row['user']} {row['service']}".casefold():
             results.append({'id': row['id'], 'section': 'payments', 'title': row['user'], 'subtitle': f"{row['service']} · {row['amount']}đ · Mô phỏng"})
@@ -181,7 +216,7 @@ class OperatingUpdate(BaseModel):
 @router.get('/system')
 def system_info(user: User = Depends(admin_user), db: Session = Depends(db_session)):
     cfg = settings()
-    return {'operating': operating_settings(db), 'chat_configured': bool(cfg.openai_api_key and cfg.openai_chat_model), 'voice_configured': bool(cfg.openai_api_key and cfg.openai_transcribe_model and cfg.openai_tts_model), 'database': 'connected', 'book_knowledge_enabled': cfg.book_knowledge_enabled, 'note': 'Chỉ kiểm tra cấu hình; không gọi API trả phí, không xác nhận số dư hay tình trạng của nhà cung cấp.'}
+    return {'operating': operating_settings(db), 'chat_configured': cfg.chat_configured, 'voice_configured': cfg.voice_configured, 'database': 'connected', 'book_knowledge_enabled': cfg.book_knowledge_enabled, 'note': 'Chỉ kiểm tra cấu hình; không gọi API trả phí, không xác nhận số dư hay tình trạng của nhà cung cấp.'}
 
 
 @router.put('/system')

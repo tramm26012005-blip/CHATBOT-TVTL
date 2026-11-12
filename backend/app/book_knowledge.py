@@ -93,7 +93,9 @@ def retrieve(query: str, *, index_path: Path | None = None, limit: int = 3) -> l
             related = sum((' ' + phrase + ' ') in body for phrase in anchors)
             return (-(12 * direct + 3 * related), row['rank'])
         rows = sorted(rows, key=relevance)
-    hits, per_book, used_pages = [], {}, set()
+    hits: list[dict] = []
+    per_book: dict[str, int] = {}
+    used_pages: set = set()
     primary = set(w for w in normalize(query).split() if len(w) > 1 and w not in STOPWORDS)
     for row in rows:
         text = row['text']

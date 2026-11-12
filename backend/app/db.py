@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import create_engine, String, Text, Boolean, ForeignKey, DateTime, UniqueConstraint, CheckConstraint, func
+from sqlalchemy import create_engine, String, Text, Boolean, BigInteger, ForeignKey, DateTime, UniqueConstraint, CheckConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from .config import settings
 import uuid
@@ -30,10 +30,14 @@ class User(Base):
     membership_tier: Mapped[str] = mapped_column(String(16), default='normal', server_default='normal')
     vip_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     membership_demo: Mapped[bool] = mapped_column(Boolean, default=False, server_default='0')
+    # Last time a VIP feature was actually used (chat/voice question, booking). Decides refund on cancel.
+    vip_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=now, server_default=func.now())
     created_at_source: Mapped[str | None] = mapped_column(String(24), nullable=True, default='registration', server_default='registration')
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    failed_login_attempts: Mapped[int] = mapped_column(default=0, server_default='0')
+    login_locked: Mapped[bool] = mapped_column(Boolean, default=False, server_default='0')
     settings_json: Mapped[str] = mapped_column(Text, default='{}')
 
 
@@ -195,6 +199,32 @@ class ServiceBudget(Base):
     __tablename__ = 'service_budget'
     day: Mapped[str] = mapped_column(String(10), primary_key=True)
     requests: Mapped[int] = mapped_column(default=0)
+
+
+class PaymentOrder(Base):
+    """Real VIP receipts. Retained for reconciliation if an account is deleted."""
+    __tablename__ = 'payment_orders'
+    __table_args__ = (CheckConstraint('amount > 0 AND duration_days > 0', name='ck_payment_amount'),
+                      CheckConstraint("method IN ('bank', 'momo')", name='ck_payment_method'))
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=uid)
+    user_id: Mapped[str] = mapped_column(String(36), index=True)
+    method: Mapped[str] = mapped_column(String(8))
+    order_code: Mapped[int] = mapped_column(BigInteger, unique=True)
+    amount: Mapped[int] = mapped_column(default=300000)
+    duration_days: Mapped[int] = mapped_column(default=30)
+    status: Mapped[str] = mapped_column(String(24), default='creating')
+    provider_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    transaction_key: Mapped[str | None] = mapped_column(String(160), unique=True, nullable=True)
+    checkout_url: Mapped[str] = mapped_column(Text, default='')
+    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
+    expires: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Separate from `status` so a re-delivered payment callback can never re-grant a refunded order.
+    refund_status: Mapped[str | None] = mapped_column(String(16), nullable=True)  # requested | refunded
+    refund_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    refund_note: Mapped[str] = mapped_column(Text, default='', server_default='')
 
 
 class PlanUsage(Base):

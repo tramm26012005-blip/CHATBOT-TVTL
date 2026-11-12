@@ -18,3 +18,5 @@ test-results/
 # User-provided books and private extracted index are not public source assets.
 book/
 data/books/*.sqlite
+
+*.dump

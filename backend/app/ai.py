@@ -1,11 +1,32 @@
 import asyncio
 import json
+import logging
 import re
 from fastapi import HTTPException
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
+from .gemini import GeminiClient, rate_limit_message
 from .config import settings
 from .schemas import Emotion, SupportContext
 from . import book_knowledge
+
+logger = logging.getLogger(__name__)
+
+
+def provider_unavailable(error=None):
+    """Report service failures without logging conversations or provider bodies."""
+    status = getattr(error, 'status_code', None)
+    logger.warning('AI service unavailable: error_type=%s status=%s',
+                   type(error).__name__ if error else 'MissingRoutingOutput', status)
+    if isinstance(error, RateLimitError):
+        raise HTTPException(
+            429,
+            rate_limit_message(getattr(error, 'body', None)),
+        ) from error
+    raise HTTPException(
+        503,
+        'Lạc Lạc đang tạm thời gặp lỗi kết nối hoặc xử lý AI. '
+        'Đây là lỗi dịch vụ, không phải do nội dung bạn chia sẻ. Bạn hãy thử lại sau.',
+    ) from error
 
 SYSTEM_PROMPT = '''Bạn tên là Lạc Lạc, người bạn đồng hành AI hỗ trợ sức khỏe tinh thần cho sinh viên Việt Nam từ 18 tuổi, trên website Tư vấn tâm lý.
 Luôn xưng mình và gọi người dùng là bạn. Khi giới thiệu, nói mình là Lạc Lạc; không tự xưng tên website là tên của mình. Không tự nhận là người thật hoặc bác sĩ. Không cần lặp lời giới thiệu ở mọi lượt.
@@ -118,6 +139,12 @@ _shared_client = None
 
 def client():
     global _shared_client
+    if getattr(settings(), 'ai_provider', 'openai') == 'gemini':
+        if not settings().gemini_api_key.strip():
+            raise HTTPException(503, 'Chưa cấu hình GEMINI_API_KEY. Hãy điền key trong backend/.env rồi khởi động lại backend.')
+        if _shared_client is None:
+            _shared_client = GeminiClient(settings().gemini_api_key)
+        return _shared_client
     if not settings().openai_api_key:
         raise HTTPException(503, 'Chưa cấu hình OpenAI API key. Hiện chưa thể trò chuyện với AI.')
     if _shared_client is None:
@@ -134,6 +161,8 @@ async def close_client():
 
 
 def chat_model():
+    if getattr(settings(), 'ai_provider', 'openai') == 'gemini':
+        return settings().gemini_chat_model
     if not settings().openai_chat_model:
         raise HTTPException(503, 'Chưa cấu hình model trò chuyện của OpenAI.')
     return settings().openai_chat_model
@@ -145,6 +174,8 @@ def keyword_risk(text):
 
 
 async def moderate(text):
+    if isinstance(client(), GeminiClient):
+        return await client().moderate(text, chat_model())
     result = await client().moderations.create(model='omni-moderation-latest', input=text)
     return result.results[0]
 
@@ -154,7 +185,7 @@ def self_harm(result):
     return any(categories.get(k, False) for k in ('self-harm/intent', 'self-harm/instructions', 'self_harm_intent', 'self_harm_instructions'))
 
 
-async def safe_reply(messages):
+async def safe_reply(messages, *, voice_mode=False):
     api = client()
     model = chat_model()
     # Entire output is checked before disclosure; client streaming is progressive delivery.
@@ -171,10 +202,17 @@ async def safe_reply(messages):
         if isinstance(result, BaseException) and not isinstance(result, Exception):
             raise result
     if isinstance(check, Exception) and not keyword_risk(user_text):
+        if isinstance(check, RateLimitError):
+            provider_unavailable(check)
         raise check
     if not isinstance(assessment, Exception):
         context = assessment.output_parsed
-    if context is None or not grounded_context(context, messages):
+    if context is None:
+        fallback, risk = routing_failure_reply(messages)
+        if risk:
+            return fallback, risk
+        provider_unavailable(assessment if isinstance(assessment, Exception) else None)
+    if not grounded_context(context, messages):
         return routing_failure_reply(messages)
     risk = context.route != 'ordinary'
     if not risk and context.scope == 'out_of_scope':
@@ -187,6 +225,8 @@ async def safe_reply(messages):
         instructions += '\nViết phản hồi mới dựa trên đúng diễn biến, không sao chép mẫu. Ưu tiên an toàn nhưng tiếp tục lắng nghe. Không tự tạo số hỗ trợ, không khẳng định đã gọi cứu hộ.'
         if context.route == 'urgent':
             instructions += '\nNguy hiểm hiện tại: phản hồi ngắn, trực tiếp; khuyến khích có người thật ở bên ngay và trợ giúp y tế khẩn cấp. Nếu đã bị thương cần trợ giúp y tế ngay. Có thể đề nghị rời xa vật/nơi nguy hiểm nếu an toàn, không mô tả phương thức. Hỏi một bước cụ thể về người có thể đến ngay; không quay lại hỏi chung chung bạn có an toàn không khi người dùng đã nói rõ ý định.'
+    if voice_mode:
+        instructions += '\nĐây là hội thoại bằng giọng nói: trả lời tự nhiên, ngắn trong 2–4 câu, không dùng danh sách hoặc Markdown. Vẫn giữ đầy đủ hướng dẫn an toàn khi có nguy hiểm.'
     references = []
     model_input = [m.model_dump() for m in messages]
     # Books cannot change scope routing, safety decisions, or the assessment score.
@@ -202,9 +242,11 @@ async def safe_reply(messages):
             model_input = [book_knowledge.reference_input(references), *model_input]
     try:
         result = await api.responses.create(model=model, instructions=instructions, input=model_input, max_output_tokens=800, store=False)
-    except Exception:
+    except Exception as error:
         if risk:
             return support_fallback(context), True
+        if isinstance(error, RateLimitError):
+            provider_unavailable(error)
         raise
     reply = result.output_text.strip()
     if not reply:
@@ -214,9 +256,11 @@ async def safe_reply(messages):
     reply = book_knowledge.attach_references(reply, references)
     try:
         output_check = await moderate(reply)
-    except Exception:
+    except Exception as error:
         if risk:
             return support_fallback(context), True
+        if isinstance(error, RateLimitError):
+            provider_unavailable(error)
         raise
     if output_blocked(output_check):
         if risk:

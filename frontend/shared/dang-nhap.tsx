@@ -14,7 +14,7 @@ import {
   UserRound,
   UserRoundPlus,
 } from "lucide-react";
-import { api, type User } from "@/lib/api";
+import { api, ApiError, type User } from "@/lib/api";
 import { BrandWordmark } from "./thuong-hieu";
 import "./dang-nhap.css";
 
@@ -46,11 +46,15 @@ export default function AuthEntry({
   const [expiresAt, setExpiresAt] = useState(0);
   const [resendAt, setResendAt] = useState(0);
   const [clock, setClock] = useState(0);
+  const [lockedEmail, setLockedEmail] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const loginLocked = path === "/login" && !!lockedEmail && loginEmail === lockedEmail;
   useEffect(() => {
     setChallenge("");
     setRecoveryToken("");
     setOtp("");
     setError("");
+    setLockedEmail("");
     setFieldErrors({});
     setMessage(
       path === "/login" &&
@@ -208,7 +212,7 @@ export default function AuthEntry({
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || loginLocked) return;
     setError("");
     setMessage("");
     if (!validateFields(event.currentTarget)) return;
@@ -278,6 +282,11 @@ export default function AuthEntry({
         router.push(user.role === "admin" ? "/admin" : user.role === "expert" ? "/expert" : "/");
       }
     } catch (err) {
+      if (path === "/login" && err instanceof ApiError && err.status === 423) {
+        const email = String(form.get("email") || "").trim().toLowerCase();
+        setLoginEmail(email);
+        setLockedEmail(email);
+      }
       setError((err as Error).message);
     } finally {
       setBusy(false);
@@ -436,6 +445,7 @@ export default function AuthEntry({
                     </span>
                     <input
                       name="email"
+                      onChange={(event) => setLoginEmail(event.target.value.trim().toLowerCase())}
                       aria-invalid={!!fieldErrors.email}
                       aria-describedby={
                         fieldErrors.email ? "auth-error-email" : undefined
@@ -470,6 +480,7 @@ export default function AuthEntry({
                     <div className="auth-entry-password">
                       <input
                         id="auth-password"
+                        disabled={loginLocked}
                         name="password"
                         aria-invalid={!!fieldErrors.password}
                         aria-describedby={
@@ -607,6 +618,7 @@ export default function AuthEntry({
               className="auth-entry-submit"
               disabled={
                 busy ||
+                loginLocked ||
                 ((register || forgot) &&
                   !!challenge &&
                   !recoveryToken &&
@@ -628,7 +640,7 @@ export default function AuthEntry({
                           : "Gửi mã OTP"
                       : reset
                         ? "Lưu mật khẩu mới"
-                        : "Đăng nhập"}
+                        : loginLocked ? "Tài khoản đã bị khóa" : "Đăng nhập"}
               </span>
               <span className="auth-entry-submit-icon">
                 {busy ? (

@@ -16,7 +16,7 @@ from app.db import db_session, User, PrivateRecord, Content, Booking, ExpertRevi
 from app.schemas import Preferences, Chat, AssessmentSubmit, BookingCreate, BookingUpdate
 from app.security import current_user, student_user, encrypt, decrypt
 from app.assessment_guidance import RESULT_PROMPT, result_guidance
-from .goi_thanh_vien import require_vip, is_vip, ensure_allowance, authorize_reply, consume_reply
+from .goi_thanh_vien import require_vip, vip_action, is_vip, ensure_allowance, authorize_reply, consume_reply
 from app.dung_chung import public_user, preferences, use_budget, owned_record, item_view, booking_view
 
 router = APIRouter()
@@ -24,7 +24,7 @@ router = APIRouter()
 
 @router.put('/api/me/preferences')
 def save_preferences(body: Preferences, user: User = Depends(require_vip), db: Session = Depends(db_session)):
-    user = db.get(User, user.id)
+    user = db.get_one(User, user.id)
     previous = preferences(user)
     changes = body.model_dump(exclude={'name'})
     user.name = body.name.strip()
@@ -50,11 +50,11 @@ async def chat(body: Chat, user: User = Depends(student_user), db: Session = Dep
     ensure_allowance(db, user, count_question=True)
     use_budget(db, user)
     try:
-        text, risk = await ai.safe_reply(body.messages)
+        text, risk = await ai.safe_reply(body.messages, voice_mode=True) if body.voice_mode else await ai.safe_reply(body.messages)
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(502, 'Chưa kết nối được OpenAI. Bạn hãy thử lại sau; tin nhắn chưa được lưu.')
+        raise HTTPException(502, 'Chưa kết nối được dịch vụ AI. Bạn hãy thử lại sau; tin nhắn chưa được lưu.')
     authorize_reply(db, user, text)
     record_id = None
     if body.save:
@@ -74,8 +74,11 @@ async def chat(body: Chat, user: User = Depends(student_user), db: Session = Dep
 
     async def events():
         yield 'data: ' + json.dumps({'conversation_id': record_id, 'risk': risk}) + '\n\n'
-        async for event in ai.stream_reply(text):
-            yield event
+        if body.voice_mode:
+            yield 'data: ' + json.dumps({'delta': text}, ensure_ascii=False) + '\n\n'
+        else:
+            async for event in ai.stream_reply(text):
+                yield event
         yield 'data: {"done":true}\n\n'
     return StreamingResponse(events(), media_type='text/event-stream', headers={'X-Accel-Buffering': 'no'})
 
@@ -238,6 +241,16 @@ async def transcribe(file: UploadFile, user: User = Depends(student_user), db: S
         raise HTTPException(422, 'Đoạn thu âm trống. Hãy bật micro và nói trước khi gửi.')
     ensure_allowance(db, user)
     api = ai.client()
+    if settings().ai_provider == 'gemini':
+        if not settings().gemini_transcribe_model:
+            raise HTTPException(503, 'Chưa cấu hình GEMINI_TRANSCRIBE_MODEL.')
+        use_budget(db, user)
+        try:
+            return {'text': await api.transcribe(audio, content_type, settings().gemini_transcribe_model)}
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(502, 'Chưa chuyển được âm thanh thành văn bản. Bạn hãy thử lại.') from None
     if not settings().openai_transcribe_model:
         raise HTTPException(503, 'Chưa cấu hình model chuyển giọng nói thành văn bản.')
     use_budget(db, user)
@@ -272,6 +285,20 @@ class Speak(BaseModel):
 async def speak(body: Speak, user: User = Depends(student_user), db: Session = Depends(db_session)):
     consume_reply(db, user, body.text)
     api = ai.client()
+    if settings().ai_provider == 'gemini':
+        if not settings().gemini_tts_model:
+            raise HTTPException(503, 'Chưa cấu hình GEMINI_TTS_MODEL.')
+        use_budget(db, user)
+        try:
+            safety = await ai.moderate(body.text)
+            if safety.flagged:
+                raise HTTPException(422, 'Nội dung này chưa phù hợp để phát giọng AI.')
+            audio, mime = await api.speak(body.text, settings().gemini_tts_model, body.voice, body.voice_style, body.speed)
+            return Response(content=audio, media_type=mime)
+        except HTTPException:
+            raise
+        except Exception:
+            raise HTTPException(502, 'Chưa tạo được giọng nói. Nội dung văn bản vẫn khả dụng.') from None
     if not settings().openai_tts_model:
         raise HTTPException(503, 'Chưa cấu hình model giọng nói.')
     use_budget(db, user)
@@ -376,7 +403,7 @@ def valid_booking_time(starts):
 
 
 @router.post('/api/bookings')
-def create_booking(body: BookingCreate, user: User = Depends(require_vip), db: Session = Depends(db_session)):
+def create_booking(body: BookingCreate, user: User = Depends(vip_action), db: Session = Depends(db_session)):
     expert = db.scalar(select(Content).where(Content.id == body.expert_id).with_for_update())
     if not expert or not expert.published or expert.kind != 'experts':
         raise HTTPException(404, 'Chuyên gia chưa được công khai hoặc xác minh.')

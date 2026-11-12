@@ -48,6 +48,10 @@ Mỗi file `.tsx` có file `.css` cùng tên (nếu có) đi kèm ngay bên cạ
 
 Thêm chức năng cho vai trò nào thì sửa trong thư mục của vai trò đó. Chỉ những thứ nhiều vai trò cùng dùng mới đặt ở `frontend/shared/` hoặc `backend/app/`. Trong frontend có thể import bằng `@admin/…`, `@expert/…`, `@student/…`, `@shared/…`.
 
+## Thanh toán gói VIP
+
+Luồng thanh toán thật MB Bank (payOS) và MoMo, cấu hình khóa backend, webhook HTTPS và kiểm tra trước khi nhận tiền được mô tả tại [THANH_TOAN.md](THANH_TOAN.md). Mặc định chưa bật nhận tiền thật; không dùng mã QR mô phỏng để chuyển tiền. Thanh toán đặt lịch chuyên gia vẫn là mô phỏng.
+
 ## Chạy cục bộ
 
 Cần Python 3.12+, Node.js 22+ và pnpm. Thực hiện từ thư mục dự án:
@@ -83,19 +87,32 @@ pnpm dev
 
 Mở **http://localhost:3000**. `APP_ORIGIN` phải khớp chính xác URL giao diện, bao gồm giao thức và cổng. Frontend chuyển tiếp `/api` đến backend; không đưa OpenAI API key vào frontend.
 
-## OpenAI API
+## Gemini API
 
-1. Tạo project/API key tại https://platform.openai.com/ và cấu hình thanh toán/quyền truy cập phù hợp.
-2. Chỉ điền `OPENAI_API_KEY` trong `backend/.env`.
-3. Điền `OPENAI_CHAT_MODEL`, `OPENAI_TRANSCRIBE_MODEL`, `OPENAI_TTS_MODEL` với các model thực sự được bật trong project. Không mặc định giả định tài khoản có quyền với một model cụ thể.
-4. Khởi động lại backend. Nếu thiếu key hoặc model, UI báo chưa cấu hình; không sinh phản hồi giả.
-5. Mỗi tài khoản có hạn mức `DAILY_AI_REQUEST_LIMIT`; toàn dịch vụ có `DAILY_SERVICE_REQUEST_LIMIT`. Text, cảm xúc, STT và TTS đều tính lượt. Đây là hạn mức lượt gọi, không phải cam kết trần chi phí bằng tiền; cần giám sát thanh toán trước triển khai công khai.
+1. Tạo API key tại https://aistudio.google.com/apikey.
+2. Điền key trong `backend/.env` (không đặt vào frontend):
 
-Chat dùng Responses API với `store=False`, moderation đầu vào và đầu ra; sau khi kiểm tra toàn bộ, API trả nội dung dần qua SSE. Đây chưa phải streaming token trực tiếp từ OpenAI, độ trễ đầu tiên cao hơn. Nhận diện cảm xúc dùng structured output và cần sinh viên xác nhận. Voice là thu theo lượt, STT → LLM → TTS, không phải Realtime; người dùng có thể ngắt phát và kết thúc. Âm thanh không ghi xuống database ứng dụng. Dữ liệu vẫn được xử lý bởi nhà cung cấp theo chính sách của họ.
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=
+GEMINI_CHAT_MODEL=gemini-3.6-flash
+GEMINI_TRANSCRIBE_MODEL=gemini-3.6-flash
+GEMINI_TTS_MODEL=gemini-3.8-flash-lite-tts
+```
 
-Tài liệu: https://developers.openai.com/api/docs/guides/audio và https://developers.openai.com/api/docs/guides/your-data.
+3. Khởi động lại backend sau khi nhập key. Model phải được tài khoản Gemini của bạn hỗ trợ; có thể đổi `GEMINI_CHAT_MODEL` khi cần.
+4. Chat, phân luồng hỗ trợ, kiểm tra nội dung và nhận diện cảm xúc đều dùng Gemini. Không cần tín dụng OpenAI. Kiểm tra nội dung dùng structured output của Gemini, không phải dịch vụ moderation OpenAI; cần đánh giá lại chất lượng trước khi triển khai công khai.
+5. Giọng nói dùng Gemini: thu âm → chép lời → chat → phát giọng tiếng Việt. Audio được xử lý trong bộ nhớ, không lưu file. Các lựa chọn giọng cũ được ánh xạ sang giọng Gemini; tốc độ và phong cách được hướng dẫn bằng lời nên có thể không chính xác tuyệt đối. Cần quyền truy cập model TTS và hạn mức riêng. Có thể quay về cấu hình cũ bằng `AI_PROVIDER=openai` và các biến `OPENAI_*`.
+
+Nội dung được kiểm tra trước khi trả dần qua SSE. Nhận diện cảm xúc cần người dùng xác nhận. Các hạn mức lượt gọi của ứng dụng vẫn áp dụng; hạn mức và chi phí Gemini phụ thuộc tài khoản của bạn.
+
+Tài liệu tích hợp: https://ai.google.dev/gemini-api/docs/openai.
 
 ## Tài khoản và Admin
+
+Đăng nhập giới hạn **3 lần sai mật khẩu liên tiếp cho mỗi tài khoản**. Giao diện chỉ cảnh báo sau khi nhập sai, kèm số lượt còn lại sau lần sai thứ nhất/thứ hai. Lần sai thứ ba khóa tài khoản, thu hồi phiên đăng nhập và chặn đăng nhập cả khi nhập đúng mật khẩu. Bộ đếm lưu trong database, không mất khi tải lại trang hoặc đổi trình duyệt. Đăng nhập thành công trước khi bị khóa đặt bộ đếm về 0.
+
+Mở khóa bằng **Quên mật khẩu → xác thực OTP email → đặt mật khẩu mới**, hoặc Admin mở lại tài khoản ở khu vực quản lý người dùng/nhân sự. Tài khoản bị Admin chủ động vô hiệu hóa không được tự mở bằng OTP. Khởi động lại backend hoặc chạy `python manage.py upgrade-db` để bổ sung các cột mới cho database hiện có; dữ liệu và mật khẩu cũ được giữ nguyên.
 
 Đăng ký tài khoản từ giao diện, sau đó vận hành viên cấp quyền bằng terminal trong `backend`:
 
@@ -180,3 +197,11 @@ Lạc Lạc đã có tra cứu tài liệu cục bộ từ `book/`, trả lời 
 ## Quy tắc cấp tài khoản và tách cổng
 
 Khách hàng tự đăng ký/OTP; tài khoản admin do chủ hệ thống cấp bằng `manage.py make-admin`; chuyên gia chỉ do admin tạo kèm hồ sơ. `/bookings` là lịch của khách hàng, `/expert` là cổng làm việc chuyên gia. Xem `docs/phan-quyen-tai-khoan.md` để biết ma trận quyền và cách kiểm thử.
+
+### Hội thoại giọng nói tự động
+
+Bật micro một lần, nói rồi ngừng khoảng 1,1 giây để tự gửi bản thu; không cần bấm gửi. Sau khi Lạc Lạc phát xong, micro tự mở cho lượt tiếp theo. Không nghe thấy lời nói trong 12 giây sẽ dừng, không gửi bản thu im lặng. Nút điện thoại kết thúc toàn bộ phiên. Mỗi lượt vẫn giới hạn 45 giây. Nhận biết khoảng lặng chạy cục bộ bằng Web Audio; môi trường nhiều tiếng ồn có thể ảnh hưởng. Phản hồi giọng nói được yêu cầu ngắn và giữ các kiểm tra an toàn; thời gian chờ vẫn phụ thuộc API chép lời, chat và phát âm thanh.
+
+## Triển khai VPS với HTTPS
+
+Cấu hình production gồm frontend, backend, PostgreSQL và Caddy nằm trong [deploy/README.md](deploy/README.md). Cần thông tin server, tên miền và cách truy cập để triển khai thực tế. Database và API key không tự được chuyển hoặc công khai.

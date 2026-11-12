@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db import Content, HospitalVisit, User, Audit, db_session, now
 from app.security import admin_user, encrypt, decrypt
-from .goi_thanh_vien import require_vip
+from .goi_thanh_vien import require_vip, vip_action
 
 router = APIRouter()
 
@@ -45,7 +45,7 @@ def hospitals(user: User = Depends(require_vip), db: Session = Depends(db_sessio
 
 
 @router.post('/api/hospital-visits', status_code=201)
-def create_visit(body: VisitInput, user: User = Depends(require_vip), db: Session = Depends(db_session)):
+def create_visit(body: VisitInput, user: User = Depends(vip_action), db: Session = Depends(db_session)):
     hospital = db.get(Content, body.hospital_id)
     if not hospital or hospital.kind != 'hospitals' or not hospital.published:
         raise HTTPException(404, 'Bệnh viện chưa được công khai hoặc xác minh.')

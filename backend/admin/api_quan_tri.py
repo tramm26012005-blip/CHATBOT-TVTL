@@ -118,6 +118,8 @@ def update_account_status(user_id: str, body: AccountStatus, user: User = Depend
         target.name = body.name.strip()
         db.add(Audit(actor=user.id, action=f'account:{target.id}:renamed'))
     if body.is_active is not None:
+        target.failed_login_attempts = 0
+        target.login_locked = False
         target.is_active = body.is_active
         if not body.is_active:
             db.execute(delete(LoginSession).where(LoginSession.user_id == target.id))
@@ -192,6 +194,8 @@ def update_staff(user_id: str, body: StaffUpdate, user: User = Depends(admin_use
         target.password_hash = passwords.hash(body.password)
         db.add(Audit(actor=user.id, action=f'staff:{target.id}:password_reset'))
     if body.is_active is not None:
+        target.failed_login_attempts = 0
+        target.login_locked = False
         target.is_active = body.is_active
         db.add(Audit(actor=user.id, action=f'staff:{target.id}:active={body.is_active}'))
     if body.password or body.is_active is False:

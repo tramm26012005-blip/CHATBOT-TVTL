@@ -1,7 +1,7 @@
 """Shared account routes for every role: health, sign-up, login, password, account deletion."""
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.orm import Session
 
 from . import registration, recovery
@@ -13,11 +13,14 @@ from student.api_khach_hang import assessment_enabled
 from .dung_chung import public_user, purge_user_data
 
 router = APIRouter()
+LOGIN_ATTEMPT_LIMIT = 3
+LOGIN_LOCK_MESSAGE = ('Tài khoản đã bị khóa sau 3 lần nhập sai mật khẩu liên tiếp. '
+                      'Hãy dùng Quên mật khẩu để xác thực OTP và đặt mật khẩu mới, hoặc liên hệ quản trị viên mở khóa.')
 
 
 @router.get('/api/health')
 def health():
-    return {'status': 'ok', 'ai_configured': bool(settings().openai_api_key and settings().openai_chat_model), 'assessment_enabled': assessment_enabled(), 'voice_style_supported': settings().openai_tts_instructions_supported, 'voice_configured': bool(settings().openai_api_key and settings().openai_chat_model and settings().openai_transcribe_model and settings().openai_tts_model)}
+    return {'status': 'ok', 'ai_configured': settings().chat_configured, 'assessment_enabled': assessment_enabled(), 'voice_style_supported': settings().voice_style_supported, 'voice_configured': settings().voice_configured}
 
 
 @router.post('/api/auth/register', status_code=202)
@@ -40,10 +43,35 @@ def register_cancel(body: RegisterCancel, db: Session = Depends(db_session)):
 
 @router.post('/api/auth/login')
 def login(body: Login, response: Response, db: Session = Depends(db_session)):
-    user = db.scalar(select(User).where(User.email == str(body.email).lower()))
-    if not user or not user.is_active or not verify(body.password, user.password_hash):
+    user = db.scalar(select(User).where(User.email == str(body.email).lower()).with_for_update())
+    if user and user.login_locked:
+        raise HTTPException(423, LOGIN_LOCK_MESSAGE)
+    if not user or not user.is_active:
         raise HTTPException(401, 'Email hoặc mật khẩu không đúng.')
+    if not verify(body.password, user.password_hash):
+        # Atomic increment also protects local SQLite, where FOR UPDATE is ignored.
+        attempts = db.scalar(update(User).where(User.id == user.id, User.is_active == True)
+                             .values(failed_login_attempts=User.failed_login_attempts + 1)
+                             .returning(User.failed_login_attempts)
+                             .execution_options(synchronize_session=False))
+        if attempts is None:
+            db.rollback()
+            raise HTTPException(423, LOGIN_LOCK_MESSAGE)
+        user.failed_login_attempts = attempts
+        remaining = max(0, LOGIN_ATTEMPT_LIMIT - attempts)
+        if remaining == 0:
+            user.is_active = False
+            user.login_locked = True
+            for model in (LoginSession, ResetToken, PendingPasswordReset):
+                db.execute(delete(model).where(model.user_id == user.id))
+            db.add(Audit(actor=user.id, action='login:locked:3_failures'))
+        db.commit()
+        if remaining == 0:
+            raise HTTPException(423, LOGIN_LOCK_MESSAGE)
+        raise HTTPException(401, f'Email hoặc mật khẩu không đúng. Còn {remaining} lần thử; '
+                            'tài khoản sẽ bị khóa sau 3 lần nhập sai mật khẩu liên tiếp.')
     validate_account_role(user)
+    user.failed_login_attempts = 0
     create_session(user, db, response)
     return public_user(user)
 
@@ -63,7 +91,7 @@ def logout(request: Request, response: Response, db: Session = Depends(db_sessio
 
 @router.put('/api/me/password')
 def change_password(body: PasswordChange, response: Response, user: User = Depends(current_user), db: Session = Depends(db_session)):
-    user = db.get(User, user.id)
+    user = db.get_one(User, user.id)
     if not verify(body.current_password, user.password_hash):
         raise HTTPException(401, 'Mật khẩu hiện tại không đúng.')
     user.password_hash = passwords.hash(body.new_password)
@@ -100,10 +128,15 @@ def reset_password(body: PasswordReset, response: Response, db: Session = Depend
     token = db.scalar(select(ResetToken).where(ResetToken.token_hash == digest(body.token)).with_for_update())
     if not token or not token.otp_verified or registration.utc(token.expires) <= now():
         raise HTTPException(400, 'Phiên đổi mật khẩu không hợp lệ hoặc đã hết hạn. Hãy xác thực OTP lại.')
-    user = db.get(User, token.user_id)
-    if not user or not user.is_active:
+    user = db.scalar(select(User).where(User.id == token.user_id).with_for_update())
+    if not user or (not user.is_active and not user.login_locked):
         raise HTTPException(400, 'Yêu cầu khôi phục không còn hợp lệ.')
     user.password_hash = passwords.hash(body.password)
+    if user.login_locked:
+        user.is_active = True
+        db.add(Audit(actor=user.id, action='login:unlocked:verified_password_reset'))
+    user.login_locked = False
+    user.failed_login_attempts = 0
     db.execute(delete(LoginSession).where(LoginSession.user_id == user.id))
     db.execute(delete(PendingPasswordReset).where(PendingPasswordReset.user_id == user.id))
     db.execute(delete(ResetToken).where(ResetToken.user_id == user.id))

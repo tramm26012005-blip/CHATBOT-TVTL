@@ -6,6 +6,7 @@ import AvailableSlots from "./khung-gio-ranh";
 import {ConsultationPanel} from "../shared/phien-tu-van";
 import HospitalVisits from "./book-tham-kham";
 import ExpertDetails, { ExpertStars, expertDisplayName } from "./danh-gia-chuyen-gia";
+import { createVoiceActivity } from "@/lib/voice-activity";
 import { VOICE_TEST_MODE } from "@/lib/voice-test-mode";
 import {
   useEffect,
@@ -973,6 +974,12 @@ function LiveVoicePage({
     generation = useRef(0),
     starting = useRef(false),
     objectUrl = useRef("");
+  const activityCleanup = useRef<(() => void) | null>(null);
+  const nextTurnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startNextTurn = useRef<() => void>(() => {});
+  startNextTurn.current = () => { void startRecording(); };
+  function clearNextTurn() { if (nextTurnTimer.current) clearTimeout(nextTurnTimer.current); nextTurnTimer.current = null; }
+  function stopActivity() { activityCleanup.current?.(); activityCleanup.current = null; }
   useEffect(() => {
     ["speaking-soft", "speaking-open", "listening"].forEach((name) => { const image = new Image(); image.src = `/images/laclac/${name}-transparent.png`; });
   }, []);
@@ -998,6 +1005,8 @@ function LiveVoicePage({
     }
   }
   function end() {
+    clearNextTurn();
+    stopActivity();
     ++generation.current;
     starting.current = false;
     callActive.current = false;
@@ -1016,6 +1025,8 @@ function LiveVoicePage({
   }
   useEffect(
     () => () => {
+      clearNextTurn();
+      stopActivity();
       ++generation.current;
       starting.current = false;
       callActive.current = false;
@@ -1029,6 +1040,7 @@ function LiveVoicePage({
   if (!user) return <RequireLogin />;
   async function startRecording() {
     if (exhausted || starting.current || recorder.current?.state === "recording" || busy) return;
+    clearNextTurn();
     starting.current = true;
     const turn = ++generation.current;
     callActive.current = true;
@@ -1044,7 +1056,7 @@ function LiveVoicePage({
         throw new Error(
           "Micro cần trình duyệt hỗ trợ và kết nối HTTPS hoặc localhost.",
         );
-      const media = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const media = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       acquired = media;
       if (turn !== generation.current) { media.getTracks().forEach((track) => track.stop()); return; }
       stream.current = media;
@@ -1061,6 +1073,7 @@ function LiveVoicePage({
         if (e.data.size) chunks.push(e.data);
       };
       rec.onstop = () => {
+        stopActivity();
         media.getTracks().forEach((t) => t.stop());
         if (timer.current) clearTimeout(timer.current);
         if (turn === generation.current && callActive.current) void process(new Blob(chunks, { type: rec.mimeType || mime }), turn);
@@ -1069,6 +1082,38 @@ function LiveVoicePage({
         if (turn !== generation.current) return;
         end();
         setError("Micro bị gián đoạn. Bạn hãy kiểm tra thiết bị và thử lại.");
+      };
+      // Analyze volume locally; only completed speech is sent to the backend.
+      const context = new AudioContext();
+      activityCleanup.current = () => { void context.close().catch(() => {}); };
+      await context.resume();
+      if (turn !== generation.current) { void context.close().catch(() => {}); media.getTracks().forEach(track => track.stop()); return; }
+      const source = context.createMediaStreamSource(media);
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      const samples = new Float32Array(analyser.fftSize);
+      const detect = createVoiceActivity(performance.now());
+      const monitor = setInterval(() => {
+        if (turn !== generation.current || rec.state !== "recording") return;
+        analyser.getFloatTimeDomainData(samples);
+        const rms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
+        const decision = detect(rms, performance.now());
+        if (decision === "submit") {
+          setState("Mình đang chuẩn bị phản hồi…");
+          rec.stop();
+          setRecording(false);
+        } else if (decision === "silent") {
+          end();
+          setState("Chưa nghe thấy lời nói");
+          setError("Bạn hãy kiểm tra micro rồi bật lại để nói. Bản thu im lặng chưa được gửi.");
+        }
+      }, 50);
+      activityCleanup.current = () => {
+        clearInterval(monitor);
+        source.disconnect();
+        analyser.disconnect();
+        void context.close().catch(() => {});
       };
       rec.start();
       callActive.current = true;
@@ -1084,6 +1129,7 @@ function LiveVoicePage({
     } catch (e) {
       acquired?.getTracks().forEach((track) => track.stop());
       if (turn !== generation.current) return;
+      stopActivity();
       callActive.current = false;
       setActive(false);
       setRecording(false);
@@ -1123,7 +1169,7 @@ function LiveVoicePage({
       await chatStream(next, false, null, abort.signal, (event) => {
         if (event.risk) onSupport();
         if (event.delta) reply += event.delta;
-      });
+      }, true);
       if (!callActive.current || turn !== generation.current || abort.signal.aborted) return;
       if (!reply.trim()) throw new Error("Chưa nhận được phản hồi. Bạn có thể thử nói lại.");
       setMessages([...next, { role: "assistant", content: reply }]);
@@ -1156,7 +1202,10 @@ function LiveVoicePage({
       player.onended = () => {
         if (turn !== generation.current) return;
         stopPlayback();
-        setState("Đến lượt bạn. Chạm micro để nói.");
+        setState("Đến lượt bạn, mình sẽ mở lại micro…");
+        nextTurnTimer.current = setTimeout(() => {
+          if (callActive.current && turn === generation.current) startNextTurn.current();
+        }, 300);
       };
       setState("Lạc Lạc đang nói…");
       player.onplaying = () => setSpeaking(true);
@@ -1196,7 +1245,7 @@ function LiveVoicePage({
             <img src={`/images/laclac/${speaking ? ["speaking-soft", "speaking-open", "speaking-soft", "listening"][mouthFrame] : "listening"}-transparent.png`} alt={speaking ? "Lạc Lạc đang nói" : "Lạc Lạc đang lắng nghe"} />
           </div>
           <h2 aria-live="polite">{state}</h2>
-          <p>Giọng bạn nghe là giọng AI · Mỗi lượt thu tối đa 45 giây</p>
+          <p>Giọng bạn nghe là giọng AI · Tự nhận biết khi bạn nói xong</p>
           <div className="wave-bars">
             {Array.from({ length: 19 }, (_, i) => (
               <span
@@ -1231,7 +1280,7 @@ function LiveVoicePage({
                   setRecording(false);
                 } else void startRecording();
               }}
-              aria-label={recording ? "Tắt micro và gửi" : "Bật micro"}
+              aria-label={recording ? "Kết thúc lượt nói sớm" : "Bật micro"}
             >
               {busy ? (
                 <LoaderCircle className="spin" size={27} />
@@ -1254,8 +1303,8 @@ function LiveVoicePage({
           </div>
           <span className="muted">
             {recording
-              ? "Chạm micro để gửi lời nói"
-              : "Chạm micro để bắt đầu hoặc nói tiếp"}
+              ? "Bạn cứ nói tự nhiên. Lạc Lạc tự trả lời khi bạn ngừng nói khoảng 1 giây."
+              : "Chạm micro để nói. Không cần bấm gửi."}
           </span>
           <Link className="text-link" href="/settings">
             <Settings size={14} />

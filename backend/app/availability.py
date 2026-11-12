@@ -102,7 +102,7 @@ def set_availability(body: WeeklyWrite, user: User = Depends(expert_user), db: S
         row = ExpertAvailability(expert_id=user.expert_id)
         db.add(row)
     row.weekly_json = json.dumps([w.model_dump() for w in sorted(body.windows, key=lambda w: (w.weekday, w.start))])
-    db.add(Audit(actor=user.id, action='availability:update:' + user.expert_id))
+    db.add(Audit(actor=user.id, action=f'availability:update:{user.expert_id}'))
     db.commit()
     return own_availability(user, db)
 

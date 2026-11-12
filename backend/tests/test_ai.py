@@ -6,6 +6,9 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+import httpx
+from fastapi import HTTPException
+from openai import RateLimitError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import ai
@@ -210,8 +213,51 @@ def test_mixed_topic_preserves_real_risk_without_allowing_code(provider):
 @pytest.mark.parametrize('text', ['Viết Bubble Sort.', 'Mình thấy hơi mệt.', 'Bài học phòng ngừa tự sát là gì?', 'Mình muốn viết báo cáo về phòng ngừa tự sát.'])
 def test_router_outage_is_not_evidence_of_crisis(provider, text):
     provider.parse.side_effect = RuntimeError('mock outage')
-    reply, risk = run(('user', text))
-    assert reply == ai.CLARIFY_MESSAGE and not risk
+    with pytest.raises(HTTPException) as caught:
+        run(('user', text))
+    assert caught.value.status_code == 503
+    assert 'lỗi dịch vụ' in caught.value.detail
+    provider.create.assert_not_awaited()
+
+
+def rate_limit_error():
+    response = httpx.Response(429, request=httpx.Request('POST', 'https://api.openai.com/v1/responses'))
+    return RateLimitError('mock rate limit', response=response, body={'code': 'rate_limit_exceeded'})
+
+
+@pytest.mark.parametrize('stage', ['routing', 'moderation', 'generation', 'output_moderation'])
+def test_rate_limit_reports_service_issue_instead_of_clarification(provider, monkeypatch, stage):
+    error = rate_limit_error()
+    if stage == 'routing':
+        provider.parse.side_effect = error
+    elif stage == 'moderation':
+        monkeypatch.setattr(ai, 'moderate', AsyncMock(side_effect=error))
+    elif stage == 'generation':
+        provider.create.side_effect = error
+    else:
+        monkeypatch.setattr(ai, 'moderate', AsyncMock(side_effect=[moderation(), error]))
+    with pytest.raises(HTTPException) as caught:
+        run(('user', 'Tôi đang bị stress với đồ án tốt nghiệp.'))
+    assert caught.value.status_code == 429
+    assert 'giới hạn' in caught.value.detail
+    assert ai.CLARIFY_MESSAGE not in caught.value.detail
+
+
+def test_missing_routing_output_reports_service_issue(provider):
+    provider.parse.side_effect = None
+    provider.parse.return_value.output_parsed = None
+    with pytest.raises(HTTPException) as caught:
+        run(('user', 'Tôi đang bị stress với đồ án tốt nghiệp.'))
+    assert caught.value.status_code == 503
+    provider.create.assert_not_awaited()
+
+
+def test_rate_limit_keeps_support_fallback_for_explicit_urgent_signal(provider, monkeypatch):
+    provider.parse.side_effect = rate_limit_error()
+    monkeypatch.setattr(ai, 'moderate', AsyncMock(side_effect=rate_limit_error()))
+    reply, risk = run(('user', 'Mình muốn làm hại bản thân ngay bây giờ.'))
+    assert risk
+    assert 'người hỗ trợ trực tiếp' in reply
     provider.create.assert_not_awaited()
 
 
@@ -293,3 +339,11 @@ def test_books_can_be_disabled_without_changing_chat(provider,monkeypatch):
     reply,risk=run(('user','Mình đang buồn và lo lắng.'))
     assert reply=='Phản hồi riêng theo ngữ cảnh.' and not risk
     retrieval.assert_not_called()
+
+
+def test_voice_reply_keeps_safety_and_requests_concise_speech(provider):
+    reply, risk = asyncio.run(ai.safe_reply([Message(role='user', content='Mình hơi lo.')], voice_mode=True))
+    prompt = provider.create.await_args.kwargs['instructions']
+    assert '2–4 câu' in prompt
+    assert 'Không chẩn đoán' in prompt
+    assert reply and not risk
